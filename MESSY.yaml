@@ -1,0 +1,210 @@
+subject_id_col: subject_id
+
+patients:
+  hospital_stay_length:
+    code:
+      - HOSPITAL_STAY_LENGTH
+      - Days
+    time: null
+    numeric_value: col(hospital_stay_length)
+
+  gcs:
+    code: 
+      - GCS_SCORE
+      - Gcs
+    time: null
+    numeric_value: col(gcs)
+
+  nb_acte:
+    code: 
+     - ACT_NUMBER
+     - "Received medical treatments"
+    time: null
+    numeric_value: col(nb_acte)
+
+  age:
+    code:
+      - AGE
+      - Years
+      #- col(age) # use to match the dictionary table
+    time: null
+    numeric_value: col(age)
+    # _metadata:
+    #   outputevents_to_loinc:
+    #     description: "omop_concept_name" # List of strings are columns to be collated
+    #     itemid: "itemid (omop_source_code)"
+    #     valueuom: "unitname"
+    #     parent_codes: "{omop_vocabulary_id}/blablabla"
+    # see https://github.com/MIT-LCP/mimic-code/blob/main/mimic-iv/mapping/outputevents_to_loinc.csv
+
+
+# non-temporal categorical measurements (emit one measurement per category value)
+  gender:
+    code:
+      - GENDER
+      - col(gender)
+    time: null
+
+  entry:
+    code:
+      - ENTRY_MODE
+      - col(entry)
+    time: null
+
+  entry_code:
+    code:
+      - ENTRY_CODE
+      - col(entry_code)
+    time: null
+
+  ica:
+    code:
+      - ICA
+      - col(ica)
+    time: null
+
+  ica_therapy:
+    code:
+      - ICA_THERAPY
+      - col(ica_therapy)
+    time: null
+
+# binary flags (emit only when positive/present)
+# Note: preproc should map -1 -> null, 0 -> ABSENT or omitted, 1 -> PRESENT
+  fever:
+    code:
+      - FEVER
+      - col(fever)
+    time: null
+
+  o2_clinic:
+    code:
+      - O2_CLINICAL
+      - col(o2_clinic)
+    time: null
+
+  o2:
+    code:
+      - O2_BLOOD
+      - col(o2)
+    time: null
+
+  hta:
+    code:
+      - HYPERTENSION
+      - col(hta)
+    time: null
+
+  hct:
+    code:
+      - HYPERCHOLESTEROLEMIA
+      - col(hct)
+    time: null
+
+  smoking:
+    code:
+      - SMOKING
+      - col(tabagisme)
+    time: null
+
+  etOH:
+    code:
+      - ALCOHOL
+      - col(etOH)
+    time: null
+
+  diabetes:
+    code:
+      - DIABETES
+      - col(diabete)
+    time: null
+
+  headache:
+    code:
+      - HEADACHE
+      - col(headache)
+    time: null
+
+  unstable_ica:
+    code:
+      - UNSTABLE_ICA
+      - col(instable)
+    time: null
+
+  vasospasm:
+    code:
+      - VASOSPASM
+      - col(vasospasme)
+    time: null
+
+  ivh:
+    code:
+      - IVH
+      - col(ivh)
+    time: null
+
+# temporal events — each event maps to an absolute timestamp column created in preproc
+# For each event, numeric_value is left empty because these are occurrence events.
+  nimodipine:
+    code: 
+      - ATC
+      - C08CA06
+    time: col(nimodipine)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  paracetamol:
+    code: 
+      - ATC
+      - N02BE01
+    time: col(paracetamol)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  nad:
+    code:
+      - ATC
+      - C01CA03
+    time: col(nad)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  corotrop:
+    code:
+      - ATC
+      - C01CE02
+    time: col(corotrop)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  morphine:
+    code:
+      - ATC
+      - N02AA01
+    time: col(morphine)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  dve:
+    code:
+      - ICD
+      - "10"
+      - "00P6X0Z"
+    time: col(dve)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  atl:
+    code:
+      - ICD
+      - "10"
+      - "Z98.6"
+    time: col(atl)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  iot:
+    code:
+      - ICD
+      - "10"
+      - 0BH17EZ
+    time: col(iot)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  admission:
+    code: HOSPITAL_ADMISSION
+    time: col(admission)
+    time_format: "%Y-%m-%d %H:%M:%S"
