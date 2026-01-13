@@ -20,13 +20,13 @@ args = parser.parse_args()
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 if __name__ == "__main__":
-    gen_sphn_kg(args.num_patients, args.timeOpt, data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv"))
+    # gen_sphn_kg(args.num_patients, args.timeOpt, data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv"))
     # preprocess_kg(args.num_patients, args.timeOpt, output_path=Path(f"{PROJECT_ROOT}/processed_data"))
-    # run_rgcn(args.num_patients, args.folds, args.timeOpt, 
-    #     dr=args.dr, 
-    #     lr=args.lr, 
-    #     wd=args.wd, 
-    #     embed_dim=args.embed_dim, 
-    #     hidden_dim=args.hidden_dim,
-    # )
-    # print("Model training and evaluation completed.")
+    run_rgcn(args.num_patients, args.folds, args.timeOpt, 
+        dr=args.dr, 
+        lr=args.lr, 
+        wd=args.wd, 
+        embed_dim=args.embed_dim, 
+        hidden_dim=args.hidden_dim,
+    )
+    print("Model training and evaluation completed.")

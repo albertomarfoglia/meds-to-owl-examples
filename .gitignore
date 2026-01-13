@@ -211,3 +211,5 @@ input/*
 output/*
 intermediate/*.parquet
 metrics/*
+
+gnn/results/*

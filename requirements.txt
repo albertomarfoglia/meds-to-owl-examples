@@ -82,3 +82,4 @@ wcwidth==0.2.14
 torch==2.4.1
 torch-geometric==2.6.1
 scikit-learn==1.5.1
+matplotlib==3.10.8

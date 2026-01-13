@@ -96,13 +96,10 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim):
                 return F.log_softmax(x, dim=1)
 
         if torch.cuda.is_available():
-            print("Device moved to GPU")
             device = torch.device('cuda')
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-            print("Device moved to MPS")
             device = torch.device('mps')
         else:
-            print("Device moved to CPU")
             device = torch.device('cpu')
 
         model, data = Net().to(device), data.to(device)

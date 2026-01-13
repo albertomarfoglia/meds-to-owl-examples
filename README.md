@@ -39,9 +39,14 @@ cd neurovasc_on_meds
 2. (Recommended) Create a virtual environment:
 
 ```bash
+# ----- Using venv -----
 python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate     # Windows
+# .venv\Scripts\activate    # Windows
+
+# ----- Using conda -----
+conda create -n venv python=3.12   # Replace "venv" and Python version as needed
+conda activate venv
 ```
 
 3. Install required packages:

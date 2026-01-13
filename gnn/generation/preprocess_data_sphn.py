@@ -27,9 +27,9 @@ def preprocess_kg(num_patients, timeOpt, output_path: Path):
 
     # Save triples, entities and relations.
     print("Creating Triples / Entities / Relations.")
-    triples.to_csv(path_or_buf=f'{output_path}/sphn_pc_{timeOpt}_triples_{num_patients}.tsv', sep='\t', index=False)
-    entity.to_csv(f'{output_path}/sphn_pc_{timeOpt}_entities_{num_patients}.tsv', sep='\t', index=False)
-    relation.to_csv(f'{output_path}/sphn_pc_{timeOpt}_relations_{num_patients}.tsv', sep='\t', index=False)
+    triples.to_csv(path_or_buf=f'{output_path}/sphn_pc_{timeOpt}_triples_{num_patients}.tsv', sep='\t', index=False, header=None)
+    entity.to_csv(f'{output_path}/sphn_pc_{timeOpt}_entities_{num_patients}.tsv', sep='\t', index=False, header=None)
+    relation.to_csv(f'{output_path}/sphn_pc_{timeOpt}_relations_{num_patients}.tsv', sep='\t', index=False, header=None)
     print("Triples / Entities / Relations saved.")
 
     # Get literals.
