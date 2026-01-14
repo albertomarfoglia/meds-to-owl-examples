@@ -53,6 +53,8 @@ class EventsTable():
             "morphine": "N02AA01",
         }
 
+        self.names = np.array(list(self.proc_codes.keys()) + list(self.admin_codes.keys()))
+
         codes = self.proc_codes | self.admin_codes
 
         events = _create_event_times(data, event_cols=codes.keys()).to_dict()
@@ -89,9 +91,10 @@ def generate_meds_preprocessed(
     events = EventsTable(df)
     df_admin = events.to_administrations()
     df_proc = events.to_procedures()
+    df_pat = df.drop(columns=events.names)
 
     if output_path:
-        df.to_parquet(f"{output_path}/patients.parquet", index=False)
+        df_pat.to_parquet(f"{output_path}/patients.parquet", index=False)
         df_admin.to_parquet(f"{output_path}/administrations.parquet", index=False)
         df_proc.to_parquet(f"{output_path}/procedures.parquet", index=False)
 

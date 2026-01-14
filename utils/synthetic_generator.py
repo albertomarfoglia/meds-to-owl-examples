@@ -62,6 +62,17 @@ def _cached_download(url: str) -> str:
 # Main API
 # ------------------------------------------------------------
 
+NUMERICAL_COLUMNS = ['hospital_stay_length', 'gcs', 'nb_acte', 'age']
+CATEGORICAL_COLUMNS = [
+    'gender', 'entry', 'entry_code', 'ica', 'ttt', 'ica_therapy',
+    'fever', 'o2_clinic', 'o2', 'hta', 'hct', 'tabagisme', 'etOH',
+    'diabete', 'headache', 'instable', 'vasospasme', 'ivh', 'outcome'
+]
+EVENT_COLUMNS = ['nimodipine',  'paracetamol', 'nad', 'corotrop', 'morphine', 'dve', 'atl', 'iot']
+EVENT_COLUMNS_END = EVENT_COLUMNS + ['finish']
+OUTCOME_COLUMNS = ['back2home', 'reabilitation', 'death']  # target variable (y)
+OUTCOME_PROBS = [0.443396, 0.432075, 0.124529] # outcome probability from the distribution
+
 def generate_synthetic_dataset(
     n_patients: int,
     correlation_path: str = DEFAULT_CORR_URL,
@@ -99,14 +110,6 @@ def generate_synthetic_dataset(
     correlation_matrix = joblib.load(correlation_path)
     transitions = pd.read_csv(transition_path, index_col=0)
 
-    # List of varibles
-    numerical = ['hospital_stay_length', 'gcs', 'nb_acte', 'age']
-    categorical = ['gender', 'entry', 'entry_code', 'ica', 'ttt', 'ica_therapy', 'fever', 'o2_clinic', 'o2', 'hta', 'hct', 'tabagisme', 'etOH', 'diabete', 'headache', 'instable', 'vasospasme', 'ivh', 'outcome']
-    events = ['nimodipine',  'paracetamol', 'nad', 'corotrop', 'morphine', 'dve', 'atl', 'iot']
-    events_end = events + ['finish']
-    y = ['back2home', 'reabilitation', 'death'] # outcome
-    y_probs = [0.443396, 0.432075, 0.124529] # outcome probability from the distribution
-
     # Generate variables based on the statistics
     df = pd.DataFrame({
         'hospital_stay_length': map(round, genextreme.rvs(-0.4091639605356321, 13.2154345852118, 13.507892218123956, n_patients)),
@@ -133,9 +136,9 @@ def generate_synthetic_dataset(
         'vasospasme': np.random.choice(['1', '0'], size=n_patients, p=[0.984906, 0.015094]),
         'ivh': np.random.choice(['0', '1'], size=n_patients, p=[0.932075, 0.067925]),
         'age': map(round, genextreme.rvs(0.27689720964297965, 51.599845037531225, 14.34488206435922, n_patients)),
-        'outcome': np.random.choice(y, size=n_patients, p=y_probs)
+        'outcome': np.random.choice(OUTCOME_COLUMNS, size=n_patients, p=OUTCOME_PROBS)
         })
-    df[categorical] = df[categorical].apply(lambda x : pd.factorize(x)[0])
+    df[CATEGORICAL_COLUMNS] = df[CATEGORICAL_COLUMNS].apply(lambda x : pd.factorize(x)[0])
     df.head()
 
     # Cholesky decomposition to introduce correlations
@@ -168,8 +171,8 @@ def generate_synthetic_dataset(
     arr = synthetic_data['outcome']
     sorted_indices = np.argsort(arr)
     transformed_array = np.zeros_like(arr)
-    q1 = int(n_patients*y_probs[0])
-    q2 = int(n_patients*(y_probs[0]+y_probs[1]))
+    q1 = int(n_patients*OUTCOME_PROBS[0])
+    q2 = int(n_patients*(OUTCOME_PROBS[0]+OUTCOME_PROBS[1]))
     transformed_array[sorted_indices[:q1]] = 0
     transformed_array[sorted_indices[q1:q2]] = 1
     transformed_array[sorted_indices[q2:]] = 2
@@ -182,11 +185,11 @@ def generate_synthetic_dataset(
     start_probs = [0.47381546, 0.09476309, 0.00997506, 0, 0.00997506, 0.24189526, 0.00249377, 0.16708229, 0]
 
     def generate_care_path():
-        event = np.random.choice(events_end, size=1, p=start_probs)[0]
+        event = np.random.choice(EVENT_COLUMNS_END, size=1, p=start_probs)[0]
         path = [event]
 
         while event != 'finish':
-            event = np.random.choice(events_end, size=1, p=transitions[event].values)[0]
+            event = np.random.choice(EVENT_COLUMNS_END, size=1, p=transitions[event].values)[0]
             if event in path:
                 event = 'finish'
             path += [event]
@@ -198,13 +201,13 @@ def generate_synthetic_dataset(
         indv_times = map(round, norm.rvs(24, 5, len(path)))
         acc_times = list(accumulate(indv_times))
 
-        sol = [-1] * len(events)
+        sol = [-1] * len(EVENT_COLUMNS)
         for i, e in enumerate(path):
-            sol[events.index(e)] = acc_times[i]
+            sol[EVENT_COLUMNS.index(e)] = acc_times[i]
         
         return sol
 
-    df_events = pd.DataFrame([generate_times_path(generate_care_path()) for _ in range(n_patients)], columns=events)
+    df_events = pd.DataFrame([generate_times_path(generate_care_path()) for _ in range(n_patients)], columns=EVENT_COLUMNS)
 
     # Final synthetic tabular data 
     full = pd.concat([synthetic_data, df_events], axis=1)

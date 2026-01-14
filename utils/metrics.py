@@ -4,11 +4,11 @@ metrics_utils.py
 Unified utilities for computing tabular and RDF graph metrics
 under a standard output folder structure.
 
-Author: your-name
+Author: Alberto Marfoglia
 """
 
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, TypedDict
 from collections import Counter
 import statistics
 import json
@@ -16,43 +16,28 @@ import json
 import pandas as pd
 from rdflib import Graph, Namespace, RDF, URIRef, BNode, Literal
 
+from .synthetic_generator import EVENT_COLUMNS
 
 # =============================================================================
 # Tabular metrics (CSV + Parquet)
 # =============================================================================
 
-def compute_event_lengths_from_csv(
-    csv_path: str,
-    event_columns: List[str],
-) -> Dict[str, Any]:
+def compute_event_lengths_from_csv(df: pd.DataFrame) -> Dict[str, int]:
     """
     Compute event metrics from syn_data.csv.
 
     Static events are defined as:
         (#columns in CSV) - (#event columns)
     """
-    df = pd.read_csv(csv_path)
-
-    missing = set(event_columns) - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing event columns in CSV: {missing}")
-
-    event_lengths = {
-        event: len(df[df[event] > -1]) for event in event_columns
-    }
-
-    n_effective_columns = len(df.columns) - 1  # remove outcome
-    static_event_multiplier = n_effective_columns - len(event_columns)
-    static_events = len(df) * static_event_multiplier
+    n_rows = len(df)
+    n_features = len(df.drop(columns=["outcome"]).columns)
+    n_timed_events = (df[EVENT_COLUMNS] > -1).to_numpy().sum()
+    n_static_events = n_rows * (n_features - len(EVENT_COLUMNS))
 
     return {
-        "n_rows": len(df),
-        "n_columns": len(df.columns),
-        "event_columns": event_columns,
-        "static_event_multiplier": static_event_multiplier,
-        "event_lengths": event_lengths,
-        "static_events": static_events,
-        "total_events": sum(event_lengths.values()) + static_events,
+        "n_rows": n_rows,
+        "n_features": n_features,
+        "total_events":  n_timed_events + n_static_events,
     }
 
 
@@ -70,33 +55,33 @@ def _count_rows_in_parquet_dir(path: Path) -> int:
     return total
 
 
-def compute_intermediate_event_metrics(
-    static_event_multiplier: int,
-) -> Dict[str, Any]:
+
+def compute_intermediate_event_metrics() -> Dict[str, int]:
     """
     Compute event metrics from standard intermediate parquet layout.
     """
     base = Path("intermediate")
 
-    patients = pd.read_parquet(base / "patients.parquet")
-    administrations = pd.read_parquet(base / "administrations.parquet")
-    procedures = pd.read_parquet(base / "procedures.parquet")
+    df_patients = pd.read_parquet(base / "patients.parquet")
+    df_administrations = pd.read_parquet(base / "administrations.parquet")
+    df_procedures = pd.read_parquet(base / "procedures.parquet")
 
-    static_events = len(patients) * static_event_multiplier
-    total_events = static_events + len(administrations) + len(procedures)
+    n_patients =  len(df_patients["subject_id"].unique())
+    n_administrations = len(df_administrations)
+    n_procedures = len(df_procedures)
+    n_static_events = n_patients * len(df_patients.drop(columns=["outcome", "subject_id"]).columns)
 
     return {
-        "patients": len(patients),
-        "administrations": len(administrations),
-        "procedures": len(procedures),
-        "static_events": static_events,
-        "total_events": total_events,
+        "n_patients": n_patients,
+        "n_administrations": n_administrations,
+        "n_procedures": n_procedures,
+        "total_events": n_static_events + n_administrations + n_procedures
     }
 
 
-def compute_split_metrics_from_output(
+def compute_MEDS_metrics(
     output_path: str,
-) -> Dict[str, Any]:
+) -> Dict[str, int]:
     """
     Compute dataset split sizes from standard output/data layout.
     """
@@ -113,96 +98,144 @@ def compute_split_metrics_from_output(
         "total_events": train + held_out + tuning,
     }
 
-
 # =============================================================================
-# RDF / MEDS graph metrics
+# RDF graph metrics
 # =============================================================================
+from collections import Counter, defaultdict
 
 MEDS = Namespace("https://teamheka.github.io/meds-ontology#")
 
 
-def _count_node_kinds(g: Graph) -> Dict[str, int]:
-    iri_nodes, bnode_nodes, literal_nodes = set(), set(), set()
+def _build_graph_index(g: Graph):
+    """
+    Single pass over all triples; return structures used later:
+      - subject_triple_counts: Counter(subject -> number of outgoing triples)
+      - adjacency: dict(subject -> list of object URIRefs)   (only URIRefs)
+      - predicate_counter: Counter of predicates
+      - sets: subjects_set, predicates_set, objects_set
+      - node-type sets: iri_nodes, bnode_nodes, literal_nodes
+      - class_instances_map: dict(class_uri -> list of subjects)
+    """
+    subject_triple_counts = Counter()
+    adjacency = defaultdict(list)
+    predicate_counter = Counter()
 
-    for s, p, o in g:
-        for node in (s, p, o):
-            if isinstance(node, URIRef):
-                iri_nodes.add(node)
-            elif isinstance(node, BNode):
-                bnode_nodes.add(node)
-            elif isinstance(node, Literal):
-                literal_nodes.add(node)
+    subjects_set = set()
+    predicates_set = set()
+    objects_set = set()
+
+    iri_nodes = set()
+    bnode_nodes = set()
+    literal_nodes = set()
+
+    class_instances_map = defaultdict(list)
+
+    for s, p, o in g.triples((None, None, None)):
+        # global sets
+        subjects_set.add(s)
+        predicates_set.add(p)
+        objects_set.add(o)
+
+        # predicate frequency and per-subject triple count
+        predicate_counter[p] += 1
+        subject_triple_counts[s] += 1
+
+        # node kinds
+        if isinstance(s, URIRef):
+            iri_nodes.add(s)
+        elif isinstance(s, BNode):
+            bnode_nodes.add(s)
+        elif isinstance(s, Literal):
+            literal_nodes.add(s)
+
+        if isinstance(p, URIRef):
+            iri_nodes.add(p)
+        elif isinstance(p, BNode):
+            bnode_nodes.add(p)
+        elif isinstance(p, Literal):
+            literal_nodes.add(p)
+
+        if isinstance(o, URIRef):
+            iri_nodes.add(o)
+            # adjacency only store URIRef neighbors (matches original behavior)
+            adjacency[s].append(o)
+        elif isinstance(o, BNode):
+            bnode_nodes.add(o)
+        elif isinstance(o, Literal):
+            literal_nodes.add(o)
+
+        # collect rdf:type instances
+        if p == RDF.type:
+            class_instances_map[o].append(s)
 
     return {
-        "distinct_iris": len(iri_nodes),
-        "distinct_bnodes": len(bnode_nodes),
-        "distinct_literals": len(literal_nodes),
+        "subject_triple_counts": subject_triple_counts,
+        "adjacency": dict(adjacency),
+        "predicate_counter": predicate_counter,
+        "subjects_set": subjects_set,
+        "predicates_set": predicates_set,
+        "objects_set": objects_set,
+        "iri_nodes": iri_nodes,
+        "bnode_nodes": bnode_nodes,
+        "literal_nodes": literal_nodes,
+        "class_instances_map": dict(class_instances_map),
     }
 
 
-def _instances_of(g: Graph, class_uri: URIRef) -> List:
-    return list(g.subjects(RDF.type, class_uri))
-
-
-def _count_recursive_triples(
-    g: Graph,
-    node,
-    visited: set | None = None,
-) -> int:
-    if visited is None:
-        visited = set()
-
-    if node in visited:
-        return 0
-
-    visited.add(node)
-
-    count = 0
-    for _, _, obj in g.triples((node, None, None)):
-        count += 1
-        if isinstance(obj, URIRef):
-            count += _count_recursive_triples(g, obj, visited)
-
-    return count
-
-
-def _triples_for_subject(
-    g: Graph,
-    subject,
-    mode: str = "direct",
-) -> int:
+def _count_recursive_using_index(subject, adjacency, subject_triple_counts):
     """
-    mode:
-      - 'direct': only subject triples
-      - 'recursive': DFS following URIRefs
+    Iterative DFS using the pre-built adjacency and subject_triple_counts.
+    Counts each subject's outgoing triples once. Avoids repeated graph queries.
     """
-    if mode == "direct":
-        return sum(1 for _ in g.triples((subject, None, None)))
+    stack = [subject]
+    visited = set()
+    total = 0
 
-    if mode == "recursive":
-        return _count_recursive_triples(g, subject)
+    while stack:
+        node = stack.pop()
+        if node in visited:
+            continue
+        visited.add(node)
 
-    raise ValueError(f"Unknown mode: {mode}")
+        # add the number of outgoing triples for this node (0 if none)
+        total += subject_triple_counts.get(node, 0)
+
+        # push neighbors (only URIRef neighbors were stored)
+        for neigh in adjacency.get(node, ()):
+            if neigh not in visited:
+                stack.append(neigh)
+
+    return total
 
 
-def compute_graph_stats(
-    g: Graph,
-    event_triple_mode: str = "direct",
-) -> Dict[str, Any]:
+def compute_graph_stats(g: Graph, event_triple_mode: str = "direct") -> Dict[str, Any]:
+    idx = _build_graph_index(g)
+
+    predicate_counter: Counter = idx["predicate_counter"]
+    subject_triple_counts: Counter = idx["subject_triple_counts"]
+    adjacency: Dict = idx["adjacency"]
+
     stats: Dict[str, Any] = {}
 
+    # basic counts (len(g) is efficient)
     stats["total_triples"] = len(g)
-    stats["distinct_subjects"] = len(set(g.subjects()))
-    stats["distinct_predicates"] = len(set(g.predicates()))
-    stats["distinct_objects"] = len(set(g.objects()))
+    stats["distinct_subjects"] = len(idx["subjects_set"])
+    stats["distinct_predicates"] = len(idx["predicates_set"])
+    stats["distinct_objects"] = len(idx["objects_set"])
 
-    stats.update(_count_node_kinds(g))
+    stats.update({
+        "distinct_iris": len(idx["iri_nodes"]),
+        "distinct_bnodes": len(idx["bnode_nodes"]),
+        "distinct_literals": len(idx["literal_nodes"]),
+    })
 
-    resources = set(g.subjects()) | {
-        o for o in g.objects() if isinstance(o, (URIRef, BNode))
+    # distinct resources: subjects union objects that are URIRef/BNode
+    resources = set(idx["subjects_set"]) | {
+        o for o in idx["objects_set"] if isinstance(o, (URIRef, BNode))
     }
     stats["distinct_resources"] = len(resources)
 
+    # classes of interest
     meds_classes = {
         "Event": MEDS.Event,
         "Subject": MEDS.Subject,
@@ -213,8 +246,10 @@ def compute_graph_stats(
         "DatasetMetadata": MEDS.DatasetMetadata,
     }
 
+    # convert class_instances_map (built during indexing) into the named dict
+    class_instances_map = idx["class_instances_map"]
     class_instances = {
-        name: _instances_of(g, uri)
+        name: class_instances_map.get(uri, [])
         for name, uri in meds_classes.items()
     }
 
@@ -223,25 +258,27 @@ def compute_graph_stats(
         for name, instances in class_instances.items()
     }
 
+    # compute triples per event
     event_nodes = class_instances.get("Event", [])
-    triples_per_event = [
-        _triples_for_subject(g, ev, mode=event_triple_mode)
-        for ev in event_nodes
-    ]
+    triples_per_event = []
+    for ev in event_nodes:
+        if event_triple_mode == "direct":
+            triples_per_event.append(subject_triple_counts.get(ev, 0))
+        elif event_triple_mode == "recursive":
+            triples_per_event.append(_count_recursive_using_index(ev, adjacency, subject_triple_counts))
+        else:
+            raise ValueError(f"Unknown mode: {event_triple_mode}")
 
     stats["n_events"] = len(triples_per_event)
-    #stats["triples_per_event_list"] = triples_per_event
 
     if triples_per_event:
         stats.update({
-            "triples_per_event_mean": statistics.mean(triples_per_event),
+            "triples_per_event_mean": round(statistics.mean(triples_per_event), ndigits=2),
             "triples_per_event_median": statistics.median(triples_per_event),
             "triples_per_event_min": min(triples_per_event),
             "triples_per_event_max": max(triples_per_event),
-            "triples_per_event_pstdev": statistics.pstdev(triples_per_event),
-            "triples_per_event_stdev":
-                statistics.stdev(triples_per_event)
-                if len(triples_per_event) > 1 else 0.0,
+            "triples_per_event_pstdev": round(statistics.pstdev(triples_per_event), ndigits=2),
+            "triples_per_event_stdev": round(statistics.stdev(triples_per_event) if len(triples_per_event) > 1 else 0.0, ndigits=2),
         })
     else:
         stats.update({
@@ -253,13 +290,8 @@ def compute_graph_stats(
             "triples_per_event_stdev": 0.0,
         })
 
-    predicate_counter = Counter(g.predicates())
-    stats["distinct_predicate_frequencies"] = {
-        str(k): v for k, v in predicate_counter.items()
-    }
-    stats["top_10_predicates"] = [
-        (str(p), c) for p, c in predicate_counter.most_common(10)
-    ]
+    stats["distinct_predicate_frequencies"] = {str(k): v for k, v in predicate_counter.items()}
+    #stats["top_10_predicates"] = [(str(p), c) for p, c in predicate_counter.most_common(10)]
 
     return stats
 
@@ -268,66 +300,53 @@ def compute_graph_stats(
 # Orchestration
 # =============================================================================
 
+class TabularInput(TypedDict):
+    data: pd.DataFrame
+    timed_columns: List[str]
+
 def collect_all_metrics_from_output(
-    *,
     output_path: str,
-    csv_path: str,
-    graph_path: str,
+    graph: Graph,
+    tabular_data: pd.DataFrame,
     event_triple_mode: str = "direct",
 ) -> Dict[str, Any]:
     """
     Collect all metrics assuming standard folder structure.
     """
 
-    csv_metrics = compute_event_lengths_from_csv(
-        csv_path=csv_path,
-        event_columns=["paracetamol","nad","corotrop","morphine","dve","atl","iot", "nimodipine"],
-    )
+    tabular_metrics = compute_event_lengths_from_csv(tabular_data)
 
-    static_event_multiplier = csv_metrics["static_event_multiplier"]
+    intermediate_metrics = compute_intermediate_event_metrics()
 
-    intermediate_metrics = compute_intermediate_event_metrics(
-        static_event_multiplier=static_event_multiplier,
-    )
+    meds_metrics = compute_MEDS_metrics(output_path)
 
-    split_metrics = compute_split_metrics_from_output(output_path)
+    graph_metrics = compute_graph_stats(graph, event_triple_mode)
 
-    g = Graph()
-    g.parse(graph_path, format="turtle")
-
-    graph_metrics = compute_graph_stats(
-        g,
-        event_triple_mode=event_triple_mode,
-    )
-
-    consistency_checks = {
-        "csv_vs_intermediate_match":
-            csv_metrics["total_events"] == intermediate_metrics["total_events"],
+    consistency_checks: Dict[str, bool] = {
+        "tabular_vs_intermediate_match":
+            bool(tabular_metrics["total_events"] == intermediate_metrics["total_events"]),
         "intermediate_vs_splits_match":
-            intermediate_metrics["total_events"] == split_metrics["total_events"],
+            bool(intermediate_metrics["total_events"] == meds_metrics["total_events"]),
         "graph_event_count_match":
-            intermediate_metrics["total_events"]
-            == graph_metrics["class_counts"]["Event"],
+            bool(intermediate_metrics["total_events"] == graph_metrics["class_counts"]["Event"]),
     }
 
-    derived_metrics = {
+    derived_metrics: Dict[str, float] = {
         "events_per_patient":
-            intermediate_metrics["total_events"]
-            / intermediate_metrics["patients"],
+            round(intermediate_metrics["total_events"]
+            / intermediate_metrics["n_patients"], ndigits=2),
         "avg_triples_per_event":
-            graph_metrics["triples_per_event_mean"],
+            round(graph_metrics["triples_per_event_mean"], ndigits=2),
         "graph_density":
-            graph_metrics["total_triples"]
-            / graph_metrics["distinct_resources"],
+            round(graph_metrics["total_triples"]
+            / graph_metrics["distinct_resources"], ndigits=2),
     }
 
     return {
-        "tabular_metrics": {
-            "csv": csv_metrics,
-            "intermediate": intermediate_metrics,
-            "splits": split_metrics,
-        },
-        "graph_metrics": graph_metrics,
+        "TABULAR_METRICS": tabular_metrics,
+        "INTERMEDIATE_METRICS": intermediate_metrics,
+        "MEDS_METRICS": meds_metrics,
+        "GRAPH_METRICS": graph_metrics,
         "consistency_checks": consistency_checks,
         "derived_metrics": derived_metrics,
     }
@@ -336,6 +355,8 @@ def collect_all_metrics_from_output(
 # =============================================================================
 # Serialization
 # =============================================================================
+
+import numpy as np
 
 def save_stats_json(stats: Dict[str, Any], path: str) -> None:
     """
@@ -349,4 +370,5 @@ def save_stats_json(stats: Dict[str, Any], path: str) -> None:
         ppath.parent.mkdir(parents=True, exist_ok=True)
 
     with ppath.open("w", encoding="utf-8") as f:
-        json.dump(stats, f, indent=2)
+        json.dump(stats, f, indent=2, default=lambda x: int(x) if isinstance(x, np.integer) else float(x) if isinstance(x, np.floating) else str(x))
+
