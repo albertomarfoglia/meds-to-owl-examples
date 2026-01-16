@@ -23,9 +23,8 @@ patient_base_iris = {
     "meds": "https://teamheka.github.io/meds-data/subject/"
 }
 
-def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, prefix="sphn_pc", root = Path(".")):
-    
-    entity = pd.read_csv(f'{root}/processed_data/{prefix}_{timeOpt}_entities_{num_patients}.tsv', sep='\t', header=None)
+def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, prefix="sphn_pc", root = Path(".")):
+    entity = pd.read_csv(f'{root}/processed_data/{prefix}_{time_opt}_entities_{num_patients}.tsv', sep='\t', header=None)
     entity = entity.set_index(entity[1])
     entity = entity.to_dict()[0]
 
@@ -34,12 +33,15 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, pr
         patient = f'<{patient_base_iris[prefix]}{i}>'
         patients.append(entity[patient])
 
-    triples = pd.read_csv(f'{root}/processed_data/{prefix}_{timeOpt}_triples_{num_patients}.tsv', sep='\t', header=None)
+    triples = pd.read_csv(f'{root}/processed_data/{prefix}_{time_opt}_triples_{num_patients}.tsv', sep='\t', header=None)
+    #if prefix=="sphn_pc":
     triples_inv = triples[[2, 1, 0]]
     triples_inv.columns=[0,1,2]
     triples = triples_inv
-    y = np.asarray(joblib.load(f'{root}/data/outcomes_{prefix}_{timeOpt}_{num_patients}.joblib'))
-    num_x = torch.Tensor(np.load(f'{root}/processed_data/{prefix}_{timeOpt}_numeric_{num_patients}.npy'))
+    y = np.asarray(joblib.load(f'{root}/data/outcomes_{prefix}_{time_opt}_{num_patients}.joblib'))
+
+    # forse durante la generazione del grafo perdo l'ordine degli outcome, meds potrebbe confonderli
+    num_x = torch.Tensor(np.load(f'{root}/processed_data/{prefix}_{time_opt}_numeric_{num_patients}.npy'))
 
     edge_index = torch.vstack((torch.Tensor(triples[0]).long(),torch.Tensor(triples[2]).long()))
     edge_type = torch.Tensor(triples[1]).long()
@@ -59,13 +61,13 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, pr
     print(data)
 
     if not os.path.exists(f'{root}/results/{prefix}/exp_rgcn'):
-            os.makedirs(f'{root}/results/{prefix}/exp_rgcn')
+        os.makedirs(f'{root}/results/{prefix}/exp_rgcn')
 
     metrics = []
     hyper_param = pd.DataFrame(
         {'DROPOUT': [dr], 'LEARNING_RATE': [lr], 'WEIGHT_DECAY': [wd], 'EMBED_DIM': [embed_dim], 'HIDDEN_DIM': [hidden_dim]}
     )
-    hyper_param.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{timeOpt}_{num_patients}.csv", mode='a')
+    hyper_param.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{time_opt}_{num_patients}.csv", mode='a')
     for fold, (train_idx, val_idx, test_idx, train_y, val_y, test_y) in enumerate(zip(*k_fold(np.asarray(patients), y, folds))):
 
         data.train_idx = torch.Tensor(train_idx).long()
@@ -82,14 +84,11 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, pr
                 super().__init__()
                 self.num_lin = Linear(1, embed_dim)
                 self.act_lin = torch.nn.PReLU(embed_dim)
-                self.conv1 = RGCNConv(embed_dim, hidden_dim, data.num_relations,
-                                num_bases=8)
+                self.conv1 = RGCNConv(embed_dim, hidden_dim, data.num_relations, num_bases=8)
                 self.act1 = torch.nn.PReLU(hidden_dim)
-                self.conv2 = RGCNConv(hidden_dim, hidden_dim, data.num_relations,
-                                num_bases=8)
+                self.conv2 = RGCNConv(hidden_dim, hidden_dim, data.num_relations, num_bases=8)
                 self.act2 = torch.nn.PReLU(hidden_dim)
-                self.conv3 = RGCNConv(hidden_dim, data.num_classes, data.num_relations,
-                                num_bases=8)
+                self.conv3 = RGCNConv(hidden_dim, data.num_classes, data.num_relations, num_bases=8)
 
             def forward(self, edge_index, edge_type):
                 x = self.act_lin(self.num_lin(data.num_x))
@@ -142,13 +141,13 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, pr
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 test_acc = tmp_test_acc
-                torch.save(model.state_dict(), f'{root}/results/{prefix}/exp_rgcn/model_weights_{prefix}_{timeOpt}_{num_patients}.pth')
+                torch.save(model.state_dict(), f'{root}/results/{prefix}/exp_rgcn/model_weights_{prefix}_{time_opt}_{num_patients}.pth')
             log(Epoch=epoch, Loss=loss, Train=train_acc, Val=val_acc, Test=test_acc)
             times.append(time.time() - start)
         
         # Evaluation.
         model = Net().to(device)
-        model.load_state_dict(torch.load(f'{root}/results/{prefix}/exp_rgcn/model_weights_{prefix}_{timeOpt}_{num_patients}.pth', weights_only=True))
+        model.load_state_dict(torch.load(f'{root}/results/{prefix}/exp_rgcn/model_weights_{prefix}_{time_opt}_{num_patients}.pth', weights_only=True))
         with torch.no_grad():
             model.eval()
             out = model(data.edge_index, data.edge_type)
@@ -171,7 +170,7 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, pr
         }, index=['B2H', 'REHAB', 'DEATH', 'MACRO', 'WEIGHTED'])
         metric.index.name = fold
         metrics.append(metric)
-        metric.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{timeOpt}_{num_patients}.csv", mode='a')
+        metric.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{time_opt}_{num_patients}.csv", mode='a')
         
         if not os.path.exists(f'{root}/results/{prefix}/exp_rgcn/cm'):
             os.makedirs(f'{root}/results/{prefix}/exp_rgcn/cm')
@@ -180,15 +179,15 @@ def run_rgcn(num_patients, folds, timeOpt, dr, lr, wd, embed_dim, hidden_dim, pr
         disp = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=["Back2Home", "Reabilitation", "Death"])
         disp.plot()
         fig = disp.figure_
-        fig.savefig(f"{root}/results/{prefix}/exp_rgcn/cm/cm_{prefix}_{timeOpt}_{num_patients}_{fold}.jpg", dpi=600)    
+        fig.savefig(f"{root}/results/{prefix}/exp_rgcn/cm/cm_{prefix}_{time_opt}_{num_patients}_{fold}.jpg", dpi=600)    
     
     panel = pd.concat(metrics)
     metrics_mean = panel.groupby(level=0).mean()
     metrics_mean.index.name = 'MEAN'
     metrics_std = panel.groupby(level=0).std()
     metrics_std.index.name = 'STD'
-    metrics_mean.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{timeOpt}_{num_patients}.csv", mode='a')
-    metrics_std.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{timeOpt}_{num_patients}.csv", mode='a')
+    metrics_mean.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{time_opt}_{num_patients}.csv", mode='a')
+    metrics_std.to_csv(f"{root}/results/{prefix}/exp_rgcn/metrics_{prefix}_{time_opt}_{num_patients}.csv", mode='a')
 
 
 def k_fold(X, y, folds):

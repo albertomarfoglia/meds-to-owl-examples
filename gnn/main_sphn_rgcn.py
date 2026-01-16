@@ -2,8 +2,9 @@ import argparse
 from pathlib import Path
 
 from generation.sphn_generation import gen_sphn_kg
-from generation.preprocess_data_sphn import preprocess_kg
+from generation.meds_generation import gen_meds_kg
 from models.node_pred_rgcn_sphn import run_rgcn
+from generation.preprocess_data import preprocess_kg
 
 
 parser = argparse.ArgumentParser()
@@ -20,22 +21,32 @@ args = parser.parse_args()
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 if __name__ == "__main__":
-    # gen_sphn_kg(args.num_patients, args.timeOpt, data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv"))
-    preprocess_kg(
-        num_patients=args.num_patients,
-        time_opt=args.timeOpt,
-        input_dir=Path(f"{PROJECT_ROOT}/data"),
-        output_dir=Path(f"{PROJECT_ROOT}/processed_data"),
-        file_prefix="meds")
+    #gen_sphn_kg(args.num_patients, args.timeOpt, data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv"))
+    # gen_meds_kg(
+    #     num_patients=args.num_patients, 
+    #     time_opt=args.timeOpt, 
+    #     data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv")
+    # )
+
+    # preprocess_kg(
+    #     num_patients=args.num_patients,
+    #     input_dir=Path(f"{PROJECT_ROOT}/data"),
+    #     output_dir=Path(f"{PROJECT_ROOT}/processed_data"),
+    #     #prefix="sphn_pc",
+    #     prefix="meds",
+    #     time_opt=args.timeOpt,
+    # )
     
     run_rgcn(
-        args.num_patients, args.folds, args.timeOpt, 
+        num_patients=args.num_patients, 
+        folds=args.folds, 
+        time_opt=args.timeOpt, 
         dr=args.dr, 
         lr=args.lr, 
         wd=args.wd, 
         embed_dim=args.embed_dim, 
         hidden_dim=args.hidden_dim,
+        #prefix="sphn_pc",
         prefix="meds",
-        root = PROJECT_ROOT
     )
-    # print("Model training and evaluation completed.")
+    print("Model training and evaluation completed.")

@@ -1,0 +1,9 @@
+ontology,code,system,description
+ATC,C08CA06,ATC,Nimodipine – calcium channel blocker for cerebral vasospasm
+ATC,N02BE01,ATC,Paracetamol – analgesic and antipyretic
+ATC,C01CA03,ATC,Cardiac stimulant / inotrope
+ATC,C01CE02,ATC,Cardiac therapy agent (e.g. milrinone/corotrope)
+ATC,N02AA01,ATC,Morphine – opioid analgesic
+ICD10PCS,00P6X0Z,ICD-10-PCS,Removal of drainage device from cerebral ventricle (external approach)
+ICD10,Z98.6,ICD-10,Presence of intracranial shunt / history of neurosurgical shunt
+ICD10PCS,0BH17EZ,ICD-10-PCS,Tracheostomy procedure
