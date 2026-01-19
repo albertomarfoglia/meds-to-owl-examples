@@ -30,7 +30,7 @@ def compute_event_lengths_from_csv(df: pd.DataFrame) -> Dict[str, int]:
         (#columns in CSV) - (#event columns)
     """
     n_rows = len(df)
-    n_features = len(df.drop(columns=["outcome"]).columns)
+    n_features = len(df.columns)
     n_timed_events = (df[EVENT_COLUMNS] > -1).to_numpy().sum()
     n_static_events = n_rows * (n_features - len(EVENT_COLUMNS))
 
@@ -69,7 +69,7 @@ def compute_intermediate_event_metrics() -> Dict[str, int]:
     n_patients =  len(df_patients["subject_id"].unique())
     n_administrations = len(df_administrations)
     n_procedures = len(df_procedures)
-    n_static_events = n_patients * len(df_patients.drop(columns=["outcome", "subject_id"]).columns)
+    n_static_events = n_patients * len(df_patients.drop(columns=["subject_id"]).columns)
 
     return {
         "n_patients": n_patients,

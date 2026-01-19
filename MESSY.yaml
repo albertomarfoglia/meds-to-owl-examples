@@ -139,11 +139,11 @@ patients:
       - col(ivh)
     time: null
 
-  outcome:
-    code:
-      - outcome
-    time: null
-    numeric_value: outcome
+  # outcome:
+  #   code:
+  #     - OUTCOME
+  #   time: null
+  #   numeric_value: outcome
 
 administrations:
 # temporal events — each event maps to an absolute timestamp column created in preproc
