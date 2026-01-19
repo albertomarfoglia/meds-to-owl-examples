@@ -62,16 +62,17 @@ def preprocess_sphn_kg(node_df, entity, time_opt, num_patients):
         np.save(f"processed_data/sphn_pc_TS_TR_numeric_{num_patients}.npy", numeric_arr)
         print("Literals TS TR saved.")
 
-def preprocess_meds_kg(node_df, entity, time_opt, num_patients, prefix="meds"):
+def preprocess_meds_kg(node_df: pd.DataFrame, entity: pd.DataFrame, time_opt, num_patients, prefix="meds"):
     MEDS_NAMESPACE = "https://teamheka.github.io/meds-ontology#"
     numeric_df = node_df.loc[
         node_df['r'] == f'<{MEDS_NAMESPACE}numericValue>', ['t']
     ].copy()
 
+    values = numeric_df['t'].str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#double>')
+    numeric_df['numeric'] = pd.to_numeric(values, errors='coerce').round(2)
+
     entity_map = entity.set_index('entity')['id']
     numeric_df['id'] = numeric_df['t'].map(entity_map)
-    numeric_df['t'] = numeric_df['t'].str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#double>')
-    numeric_df['numeric'] = pd.to_numeric(numeric_df['t'], errors='coerce').round(2)
     numeric_arr = np.zeros((len(entity), 1))
     valid = numeric_df['id'].notna()
     numeric_arr[

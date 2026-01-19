@@ -23,7 +23,7 @@ patient_base_iris = {
     "meds": "https://teamheka.github.io/meds-data/subject/"
 }
 
-def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, prefix="sphn_pc", root = Path(".")):
+def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, prefix, root = Path(".")):
     entity = pd.read_csv(f'{root}/processed_data/{prefix}_{time_opt}_entities_{num_patients}.tsv', sep='\t', header=None)
     entity = entity.set_index(entity[1])
     entity = entity.to_dict()[0]
@@ -34,13 +34,12 @@ def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, p
         patients.append(entity[patient])
 
     triples = pd.read_csv(f'{root}/processed_data/{prefix}_{time_opt}_triples_{num_patients}.tsv', sep='\t', header=None)
-    #if prefix=="sphn_pc":
-    triples_inv = triples[[2, 1, 0]]
-    triples_inv.columns=[0,1,2]
-    triples = triples_inv
+    if prefix=="sphn_pc":
+        triples_inv = triples[[2, 1, 0]]
+        triples_inv.columns=[0,1,2]
+        triples = triples_inv
     y = np.asarray(joblib.load(f'{root}/data/outcomes_{prefix}_{time_opt}_{num_patients}.joblib'))
 
-    # forse durante la generazione del grafo perdo l'ordine degli outcome, meds potrebbe confonderli
     num_x = torch.Tensor(np.load(f'{root}/processed_data/{prefix}_{time_opt}_numeric_{num_patients}.npy'))
 
     edge_index = torch.vstack((torch.Tensor(triples[0]).long(),torch.Tensor(triples[2]).long()))

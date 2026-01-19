@@ -2,14 +2,13 @@ import argparse
 from pathlib import Path
 
 from generation.sphn_generation import gen_sphn_kg
-from generation.meds_generation import gen_meds_kg
 from models.node_pred_rgcn_sphn import run_rgcn
 from generation.preprocess_data import preprocess_kg
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_patients', type=int, default=10000, help='number of patients')
-parser.add_argument('--timeOpt', type=str, default='TS', choices=['NT', 'TS', 'TR', 'TS_TR'], help='time information option')
+parser.add_argument('--timeOpt', type=str, default='NT', choices=['NT', 'TS', 'TR', 'TS_TR'], help='time information option')
 parser.add_argument('--folds', type=int, default=10, help='number of folds for CV')
 parser.add_argument('--dr', type=float, default=0.2, help='dropout rate')
 parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
@@ -22,11 +21,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 if __name__ == "__main__":
     #gen_sphn_kg(args.num_patients, args.timeOpt, data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv"))
-    # gen_meds_kg(
-    #     num_patients=args.num_patients, 
-    #     time_opt=args.timeOpt, 
-    #     data_path=Path(f"{PROJECT_ROOT}/data/syn_data_{args.num_patients}.csv")
-    # )
 
     # preprocess_kg(
     #     num_patients=args.num_patients,
