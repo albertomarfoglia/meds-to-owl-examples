@@ -73,8 +73,6 @@ def preprocess_meds_kg(node_df, entity, time_opt, num_patients, prefix="meds"):
     numeric_df['t'] = numeric_df['t'].str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#double>')
     numeric_df['numeric'] = pd.to_numeric(numeric_df['t'], errors='coerce').round(2)
     numeric_arr = np.zeros((len(entity), 1))
-
-    # 6. Assign numeric values using mapped IDs
     valid = numeric_df['id'].notna()
     numeric_arr[
         numeric_df.loc[valid, 'id'].astype(int).to_numpy()

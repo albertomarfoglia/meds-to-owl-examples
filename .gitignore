@@ -216,3 +216,4 @@ gnn/output/*
 gnn/intermediate/*.parquet
 
 gnn/results/*
+gnn/processed_data/*
