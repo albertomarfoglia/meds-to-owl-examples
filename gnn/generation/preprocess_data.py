@@ -6,15 +6,20 @@ import pandas as pd
 from sklearn.preprocessing import QuantileTransformer
 
 def preprocess_sphn_kg(node_df, entity, time_opt, num_patients):
-    # Get literals.
-    numeric_df = node_df[node_df['r'] == '<http://sphn.org/hasValue>'].copy()
-    numeric_values = pd.to_numeric(numeric_df.t.values)
-    numeric_df['numeric'] = numeric_values
-    numeric_arr = np.zeros((len(entity), 1))
-    for i, v in numeric_df.t.items():
-        num_id = entity[entity.entity == v].id
-        numeric_arr[num_id] = numeric_df.numeric.loc[i]
+    numeric_df = node_df.loc[
+        node_df['r'] == '<http://sphn.org/hasValue>', ['t']
+    ].copy()
 
+    numeric_df['numeric'] = pd.to_numeric(numeric_df['t'], errors='coerce')
+
+    entity_map = entity.set_index('entity')['id']
+    numeric_df['id'] = numeric_df['t'].map(entity_map)
+    numeric_arr = np.zeros((len(entity), 1))
+    valid = numeric_df['id'].notna()
+    numeric_arr[
+        numeric_df.loc[valid, 'id'].astype(int).to_numpy()
+    ] = numeric_df.loc[valid, 'numeric'].to_numpy().reshape(-1, 1)
+    
     if time_opt == 'NT':
         np.save(f"processed_data/sphn_pc_NT_numeric_{num_patients}.npy", numeric_arr)
         print("Literals NT saved.")
@@ -57,93 +62,50 @@ def preprocess_sphn_kg(node_df, entity, time_opt, num_patients):
         np.save(f"processed_data/sphn_pc_TS_TR_numeric_{num_patients}.npy", numeric_arr)
         print("Literals TS TR saved.")
 
-# def preprocess_meds_kg(node_df, entity, time_opt, num_patients, prefix="meds"):
-#     MEDS_NAMESPACE = "https://teamheka.github.io/meds-ontology#"
-#     # Get literals.
-#     numeric_df = node_df[node_df['r'] == f'<{MEDS_NAMESPACE}numericValue>'].copy() # can be improved using Graph
-#     numeric_values = pd.to_numeric(numeric_df.t.str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#double>').values)
-#     numeric_df['numeric'] = numeric_values
-#     numeric_arr = np.zeros((len(entity), 1))
-#     for i, v in numeric_df.t.items():
-#         num_id = entity[entity.entity == v].id
-#         numeric_arr[num_id] = numeric_df.numeric.loc[i]
-
-#     if time_opt == 'TS':
-#         time_df = node_df[node_df['r'].str.contains(f'<{MEDS_NAMESPACE}time>')].copy() # can be improved using Graph
-#         time_df['sec'] = time_df.t.str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#dateTime>') # can be improved using Graph
-#         times = []
-#         for i, t in time_df.sec.items():
-#             time = datetime.strptime(t, '%Y-%m-%dT%H:%M:%S') - datetime(2020,1,1)
-#             times.append(time.total_seconds())
-#         time_df['sec'] = times
-            
-#         print("Running quantile transfromation")
-#         qt = QuantileTransformer(n_quantiles=10, random_state=0)
-#         qt_times = qt.fit_transform(time_df.sec.values.reshape(-1,1))
-#         time_df['sec'] = list(qt_times.reshape(-1,))
-#         for i, v in time_df.t.items():
-#             num_id = entity[entity.entity == v].id
-#             numeric_arr[num_id] = time_df.sec.loc[i]
-
-#     np.save(f"processed_data/{prefix}_{time_opt}_numeric_{num_patients}.npy", numeric_arr)
-#     print("Literals saved.")
-    
 def preprocess_meds_kg(node_df, entity, time_opt, num_patients, prefix="meds"):
     MEDS_NAMESPACE = "https://teamheka.github.io/meds-ontology#"
-
-    entity_to_id = dict(zip(entity.entity.values, entity.id.values))
-    numeric_arr = np.zeros((len(entity), 1))
-
-    # -------- Numeric literals --------
     numeric_df = node_df.loc[
-        node_df['r'] == f'<{MEDS_NAMESPACE}numericValue>',
-        ['t']
+        node_df['r'] == f'<{MEDS_NAMESPACE}numericValue>', ['t']
     ].copy()
 
-    numeric_df['numeric'] = (
-        numeric_df['t']
-        .str.replace('^^<http://www.w3.org/2001/XMLSchema#double>', '', regex=False)
-        .astype(float)
-        .round(2)
-    )
+    entity_map = entity.set_index('entity')['id']
+    numeric_df['id'] = numeric_df['t'].map(entity_map)
+    numeric_df['t'] = numeric_df['t'].str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#double>')
+    numeric_df['numeric'] = pd.to_numeric(numeric_df['t'], errors='coerce').round(2)
+    numeric_arr = np.zeros((len(entity), 1))
 
-    ids = numeric_df['t'].map(entity_to_id).values
-    numeric_arr[ids] = numeric_df['numeric'].values.reshape(-1, 1)
+    # 6. Assign numeric values using mapped IDs
+    valid = numeric_df['id'].notna()
+    numeric_arr[
+        numeric_df.loc[valid, 'id'].astype(int).to_numpy()
+    ] = numeric_df.loc[valid, 'numeric'].to_numpy().reshape(-1, 1)
 
-    # -------- Time literals --------
     if time_opt == 'TS':
-        time_df = node_df.loc[
-            node_df['r'].str.contains(f'<{MEDS_NAMESPACE}time>'),
-            ['t']
-        ].copy()
-
-        time_df['sec'] = pd.to_datetime(
-            time_df['t'].str.replace(
-                '^^<http://www.w3.org/2001/XMLSchema#dateTime>',
-                '',
-                regex=False
-            )
-        )
-
-        time_df['sec'] = (
-            time_df['sec'] - pd.Timestamp("2020-01-01")
-        ).dt.total_seconds()
-
-        from sklearn.preprocessing import RobustScaler
-        time_df['sec'] = RobustScaler().fit_transform(time_df[['sec']]).ravel()
-
-        ids = time_df['t'].map(entity_to_id).values
-        numeric_arr[ids] = time_df['sec'].values.reshape(-1, 1)
+        time_df = node_df[node_df['r'].str.contains(f'<{MEDS_NAMESPACE}time>')].copy() # can be improved using Graph
+        time_df['sec'] = time_df.t.str.removesuffix('^^<http://www.w3.org/2001/XMLSchema#dateTime>') # can be improved using Graph
+        times = []
+        for i, t in time_df.sec.items():
+            time = datetime.strptime(t, '%Y-%m-%dT%H:%M:%S') - datetime(2020,1,1)
+            times.append(time.total_seconds())
+        time_df['sec'] = times
+            
+        print("Running quantile transfromation")
+        qt = QuantileTransformer(n_quantiles=10, random_state=0)
+        qt_times = qt.fit_transform(time_df.sec.values.reshape(-1,1))
+        time_df['sec'] = list(qt_times.reshape(-1,))
+        for i, v in time_df.t.items():
+            num_id = entity[entity.entity == v].id
+            numeric_arr[num_id] = time_df.sec.loc[i]
 
     np.save(f"processed_data/{prefix}_{time_opt}_numeric_{num_patients}.npy", numeric_arr)
     print("Literals saved.")
-
 
 def preprocess_kg(num_patients, input_dir: Path, output_dir: Path, prefix: str = "sphn_pc", time_opt="TS"):
     output_dir.mkdir(parents=True, exist_ok=True)
     
     input_file = input_dir / f"{prefix}_{time_opt}_{num_patients}.nt"
     node_df = pd.read_csv(input_file, sep=" ", header=None)
+
     node_df.drop(columns=node_df.columns[-1], axis=1, inplace=True)
     node_df.columns=['h', 'r', 't']
 
