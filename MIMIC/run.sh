@@ -4,7 +4,7 @@
 set -e
 
 # Default output directory
-OUTPUT_DIR="${1:-.}"
+OUTPUT_DIR="${1:-MIMIC}"
 
 # Create virtual environment if it doesn't exist
 if [ ! -d ".venv_mimic" ]; then
