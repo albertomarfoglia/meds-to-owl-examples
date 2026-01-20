@@ -52,7 +52,8 @@ def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, p
         num_nodes=num_nodes,      
     )
     embedding = Parameter(torch.empty(num_nodes, embed_dim))
-    torch.nn.init.xavier_uniform_(embedding, gain=math.sqrt(2.0))
+    # OLD VERSION
+    #torch.nn.init.xavier_uniform_(embedding, gain=math.sqrt(2.0))
     data.x = embedding
     data.num_x=num_x.view(-1,1)
     data.num_relations = data.num_edge_types
@@ -79,25 +80,38 @@ def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, p
 
         # Train RGCN model.
         class Net(torch.nn.Module):
-            def __init__(self):
+            def __init__(self, num_nodes, embed_dim, hidden_dim, num_relations, num_classes, dr):
                 super().__init__()
+                ## NEW VERSION
+                self.embedding = torch.nn.Embedding(num_nodes, embed_dim)
+                torch.nn.init.xavier_uniform_(self.embedding.weight, gain=math.sqrt(2.0))
+
                 self.num_lin = Linear(1, embed_dim)
                 self.act_lin = torch.nn.PReLU(embed_dim)
-                self.conv1 = RGCNConv(embed_dim, hidden_dim, data.num_relations, num_bases=8)
-                self.act1 = torch.nn.PReLU(hidden_dim)
-                self.conv2 = RGCNConv(hidden_dim, hidden_dim, data.num_relations, num_bases=8)
-                self.act2 = torch.nn.PReLU(hidden_dim)
-                self.conv3 = RGCNConv(hidden_dim, data.num_classes, data.num_relations, num_bases=8)
 
-            def forward(self, edge_index, edge_type):
-                x = self.act_lin(self.num_lin(data.num_x))
-                x = x + data.x
+                self.conv1 = RGCNConv(embed_dim, hidden_dim, num_relations, num_bases=min(8, num_relations))
+                self.act1  = torch.nn.PReLU(hidden_dim)
+                self.conv2 = RGCNConv(hidden_dim, hidden_dim, num_relations, num_bases=min(8, num_relations))
+                self.act2  = torch.nn.PReLU(hidden_dim)
+                self.conv3 = RGCNConv(hidden_dim, num_classes, num_relations, num_bases=min(8, num_relations))
+                self.dr = dr
+
+            def forward(self, edge_index, edge_type, num_x=None):
+                # OLD version
+                # x = self.act_lin(self.num_lin(data.num_x))
+                # x = x + data.x
+                # NEW version
+                x = self.embedding.weight
+                if num_x is not None:
+                    x = x + self.act_lin(self.num_lin(num_x))
+
                 x = self.act1(self.conv1(x, edge_index, edge_type))
-                x = F.dropout(x, p=dr, training=self.training)
+                x = F.dropout(x, p=self.dr, training=self.training)
                 x = self.act2(self.conv2(x, edge_index, edge_type))
-                x = F.dropout(x, p=dr, training=self.training)
+                x = F.dropout(x, p=self.dr, training=self.training)
                 x = self.conv3(x, edge_index, edge_type)
                 return F.log_softmax(x, dim=1)
+
 
         if torch.cuda.is_available():
             device = torch.device('cuda')
@@ -106,7 +120,18 @@ def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, p
         else:
             device = torch.device('cpu')
 
-        model, data = Net().to(device), data.to(device)
+        model_kwargs = dict(
+            num_nodes=num_nodes,
+            embed_dim=embed_dim,
+            hidden_dim=hidden_dim,
+            num_relations=int(data.num_relations),
+            num_classes=data.num_classes,
+            dr=dr,
+        )
+
+        model = Net(**model_kwargs).to(device)
+        data = data.to(device)
+
         optimizer = torch.optim.Adam(
             model.parameters(), 
             lr=lr, 
@@ -145,8 +170,8 @@ def run_rgcn(num_patients, folds, time_opt, dr, lr, wd, embed_dim, hidden_dim, p
             times.append(time.time() - start)
         
         # Evaluation.
-        model = Net().to(device)
-        model.load_state_dict(torch.load(f'{root}/results/{prefix}/exp_rgcn/model_weights_{prefix}_{time_opt}_{num_patients}.pth', weights_only=True))
+        model = Net(**model_kwargs).to(device)
+        model.load_state_dict(torch.load(f'{root}/results/{prefix}/exp_rgcn/model_weights_{prefix}_{time_opt}_{num_patients}.pth'))
         with torch.no_grad():
             model.eval()
             out = model(data.edge_index, data.edge_type)
