@@ -67,7 +67,6 @@ class Preprocessor():
         )
 
         _df_events["code"] = _df_events["name"].map(lambda x: (self.icd_codes | self.atc_codes)[x])
-        print(_df_events)
 
         self.df = _df
         self.df_events = _df_events

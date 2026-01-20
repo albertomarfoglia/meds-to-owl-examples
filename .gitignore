@@ -207,10 +207,10 @@ marimo/_lsp/
 __marimo__/
 
 .logs/*
-input/*
-output/*
-intermediate/*.parquet
-metrics/*
+NEUROVASC/raw_input/*
+NEUROVASC/MEDS_cohort/*
+NEUROVASC/pre_MEDS/*.parquet
+NEUROVASC/metrics/*
 
 gnn/output/*
 gnn/intermediate/*.parquet
@@ -218,4 +218,8 @@ gnn/intermediate/*.parquet
 gnn/results/*
 gnn/processed_data/*
 
-MIMIC
+MIMIC/.logs
+MIMIC/MEDS_cohort
+MIMIC/pre_MEDS
+MIMIC/raw_input
+.venv_mimic

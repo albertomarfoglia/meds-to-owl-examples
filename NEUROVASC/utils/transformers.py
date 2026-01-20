@@ -8,7 +8,7 @@ from .neurovasc_meta import *
 def get_matching_prefix(code, prefixes):
     return next((p for p in prefixes if code.startswith(p)), None)
 
-def build_meds_dt(records):
+def build_neurovasc_meds_dt(records):
     data = defaultdict(dict)
 
     for r in records: # initial event values to 0
@@ -40,7 +40,7 @@ def build_meds_dt(records):
 
     return df.sort_index()
 
-def build_medskg_dt(graph: Graph):
+def build_neurovasc_medskg_dt(graph: Graph):
     rows = run_query(graph, "all features", PATIENT_FEATURE_MATRIX)
     df = pd.DataFrame(rows)
     df["sub_id"] = df["sub_id"].astype(int)

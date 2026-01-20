@@ -22,7 +22,7 @@ from .synthetic_generator import EVENT_COLUMNS
 # Tabular metrics (CSV + Parquet)
 # =============================================================================
 
-def count_neurovasc_events_from_csv(df: pd.DataFrame) -> Dict[str, int]:
+def _count_neurovasc_events_from_csv(df: pd.DataFrame) -> Dict[str, int]:
     """
     Compute event metrics from syn_data.csv.
 
@@ -30,7 +30,7 @@ def count_neurovasc_events_from_csv(df: pd.DataFrame) -> Dict[str, int]:
         (#columns in CSV) - (#event columns)
     """
     n_rows = len(df)
-    n_features = len(df.columns)
+    n_features = len(df.columns) - 1
     n_timed_events = (df[EVENT_COLUMNS] > -1).to_numpy().sum()
     n_static_events = n_rows * (n_features - len(EVENT_COLUMNS))
 
@@ -56,7 +56,7 @@ def _count_rows_in_parquet_dir(path: Path) -> int:
 
 
 
-def _count_neurovasc_intermediate_events(base = Path("intermediate")) -> Dict[str, int]:
+def _count_neurovasc_intermediate_events(base: Path) -> Dict[str, int]:
     """
     Compute event metrics from standard intermediate parquet layout.
     """
@@ -307,6 +307,7 @@ def compute_MEDS_graph_metrics_for_neurovasc(
     MEDS_ETL_output_path: str,
     graph: Graph,
     tabular_data: pd.DataFrame,
+    MEDS_intermediate: Path,
     event_triple_mode: str = "direct",
 ) -> Dict[str, Any]:
     """
@@ -315,9 +316,9 @@ def compute_MEDS_graph_metrics_for_neurovasc(
 
     metrics = compute_MEDS_graph_metrics(MEDS_ETL_output_path, graph, event_triple_mode)
 
-    tabular_metrics = count_neurovasc_events_from_csv(tabular_data)
+    tabular_metrics = _count_neurovasc_events_from_csv(tabular_data)
 
-    intermediate_metrics = _count_neurovasc_intermediate_events()
+    intermediate_metrics = _count_neurovasc_intermediate_events(base = MEDS_intermediate)
 
     metrics["consistency_checks"]["tabular_vs_intermediate_match"] = bool(
         tabular_metrics["total_events"] == intermediate_metrics["total_events"]
