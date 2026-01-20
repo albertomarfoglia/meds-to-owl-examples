@@ -22,7 +22,7 @@ from .synthetic_generator import EVENT_COLUMNS
 # Tabular metrics (CSV + Parquet)
 # =============================================================================
 
-def compute_event_lengths_from_csv(df: pd.DataFrame) -> Dict[str, int]:
+def count_neurovasc_events_from_csv(df: pd.DataFrame) -> Dict[str, int]:
     """
     Compute event metrics from syn_data.csv.
 
@@ -56,12 +56,10 @@ def _count_rows_in_parquet_dir(path: Path) -> int:
 
 
 
-def compute_intermediate_event_metrics() -> Dict[str, int]:
+def _count_neurovasc_intermediate_events(base = Path("intermediate")) -> Dict[str, int]:
     """
     Compute event metrics from standard intermediate parquet layout.
     """
-    base = Path("intermediate")
-
     df_patients = pd.read_parquet(base / "patients.parquet")
     df_administrations = pd.read_parquet(base / "administrations.parquet")
     df_procedures = pd.read_parquet(base / "procedures.parquet")
@@ -79,7 +77,7 @@ def compute_intermediate_event_metrics() -> Dict[str, int]:
     }
 
 
-def compute_MEDS_metrics(
+def count_MEDS_splits(
     output_path: str,
 ) -> Dict[str, int]:
     """
@@ -208,7 +206,7 @@ def _count_recursive_using_index(subject, adjacency, subject_triple_counts):
     return total
 
 
-def compute_graph_stats(g: Graph, event_triple_mode: str = "direct") -> Dict[str, Any]:
+def _compute_MEDS_graph_stats(g: Graph, event_triple_mode: str = "direct") -> Dict[str, Any]:
     idx = _build_graph_index(g)
 
     predicate_counter: Counter = idx["predicate_counter"]
@@ -304,8 +302,9 @@ class TabularInput(TypedDict):
     data: pd.DataFrame
     timed_columns: List[str]
 
-def collect_all_metrics_from_output(
-    output_path: str,
+
+def compute_MEDS_graph_metrics_for_neurovasc(
+    MEDS_ETL_output_path: str,
     graph: Graph,
     tabular_data: pd.DataFrame,
     event_triple_mode: str = "direct",
@@ -314,37 +313,54 @@ def collect_all_metrics_from_output(
     Collect all metrics assuming standard folder structure.
     """
 
-    tabular_metrics = compute_event_lengths_from_csv(tabular_data)
+    metrics = compute_MEDS_graph_metrics(MEDS_ETL_output_path, graph, event_triple_mode)
 
-    intermediate_metrics = compute_intermediate_event_metrics()
+    tabular_metrics = count_neurovasc_events_from_csv(tabular_data)
 
-    meds_metrics = compute_MEDS_metrics(output_path)
+    intermediate_metrics = _count_neurovasc_intermediate_events()
 
-    graph_metrics = compute_graph_stats(graph, event_triple_mode)
+    metrics["consistency_checks"]["tabular_vs_intermediate_match"] = bool(
+        tabular_metrics["total_events"] == intermediate_metrics["total_events"]
+    )
+    metrics["consistency_checks"]["intermediate_vs_splits_match"] = bool(
+        intermediate_metrics["total_events"] == metrics["MEDS_METRICS"]["total_events"]
+    )
+
+    metrics["derived_metrics"]["events_per_patient"] = round(
+        intermediate_metrics["total_events"] / intermediate_metrics["n_patients"], 
+        ndigits=2
+    ),
+
+    metrics["TABULAR_METRICS"] = tabular_metrics
+    metrics["INTERMEDIATE_METRICS"] = intermediate_metrics
+    return metrics
+
+
+def compute_MEDS_graph_metrics(
+    MEDS_ETL_output_path: str,
+    graph: Graph,
+    event_triple_mode: str = "direct",
+) -> Dict[str, Any]:
+    """
+    Collect all metrics assuming standard folder structure.
+    """
+    meds_metrics = count_MEDS_splits(MEDS_ETL_output_path)
+
+    graph_metrics = _compute_MEDS_graph_stats(graph, event_triple_mode)
 
     consistency_checks: Dict[str, bool] = {
-        "tabular_vs_intermediate_match":
-            bool(tabular_metrics["total_events"] == intermediate_metrics["total_events"]),
-        "intermediate_vs_splits_match":
-            bool(intermediate_metrics["total_events"] == meds_metrics["total_events"]),
         "graph_event_count_match":
-            bool(intermediate_metrics["total_events"] == graph_metrics["class_counts"]["Event"]),
+            bool(meds_metrics["total_events"] == graph_metrics["class_counts"]["Event"]),
     }
 
     derived_metrics: Dict[str, float] = {
-        "events_per_patient":
-            round(intermediate_metrics["total_events"]
-            / intermediate_metrics["n_patients"], ndigits=2),
         "avg_triples_per_event":
             round(graph_metrics["triples_per_event_mean"], ndigits=2),
         "graph_density":
-            round(graph_metrics["total_triples"]
-            / graph_metrics["distinct_resources"], ndigits=2),
+            round(graph_metrics["total_triples"] / graph_metrics["distinct_resources"], ndigits=2),
     }
 
     return {
-        "TABULAR_METRICS": tabular_metrics,
-        "INTERMEDIATE_METRICS": intermediate_metrics,
         "MEDS_METRICS": meds_metrics,
         "GRAPH_METRICS": graph_metrics,
         "consistency_checks": consistency_checks,

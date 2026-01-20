@@ -217,3 +217,5 @@ gnn/intermediate/*.parquet
 
 gnn/results/*
 gnn/processed_data/*
+
+MIMIC
