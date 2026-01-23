@@ -30,7 +30,7 @@ def _count_neurovasc_events_from_csv(df: pd.DataFrame) -> Dict[str, int]:
         (#columns in CSV) - (#event columns)
     """
     n_rows = len(df)
-    n_features = len(df.columns) - 1
+    n_features = len(df.columns)
     n_timed_events = (df[EVENT_COLUMNS] > -1).to_numpy().sum()
     n_static_events = n_rows * (n_features - len(EVENT_COLUMNS))
 
@@ -71,6 +71,7 @@ def _count_neurovasc_intermediate_events(base: Path) -> Dict[str, int]:
 
     return {
         "n_patients": n_patients,
+        "n_demographics": n_static_events,
         "n_administrations": n_administrations,
         "n_procedures": n_procedures,
         "total_events": n_static_events + n_administrations + n_procedures
