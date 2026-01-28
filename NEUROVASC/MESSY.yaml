@@ -6,39 +6,29 @@ patients:
       - HOSPITAL_STAY_LENGTH
       - Days
     time: null
-    numeric_value: col(hospital_stay_length)
+    numeric_value: hospital_stay_length
 
   gcs:
     code: 
       - GCS_SCORE
       - Gcs
     time: null
-    numeric_value: col(gcs)
+    numeric_value: gcs
 
   nb_acte:
     code: 
      - ACT_NUMBER
      - "Received medical treatments"
     time: null
-    numeric_value: col(nb_acte)
+    numeric_value: nb_acte
 
   age:
     code:
       - AGE
       - Years
-      #- col(age) # use to match the dictionary table
     time: null
-    numeric_value: col(age)
-    # _metadata:
-    #   outputevents_to_loinc:
-    #     description: "omop_concept_name" # List of strings are columns to be collated
-    #     itemid: "itemid (omop_source_code)"
-    #     valueuom: "unitname"
-    #     parent_codes: "{omop_vocabulary_id}/blablabla"
-    # see https://github.com/MIT-LCP/mimic-code/blob/main/mimic-iv/mapping/outputevents_to_loinc.csv
+    numeric_value: age
 
-
-# non-temporal categorical measurements (emit one measurement per category value)
   gender:
     code:
       - GENDER
@@ -67,6 +57,12 @@ patients:
     code:
       - ICA_THERAPY
       - col(ica_therapy)
+    time: null
+
+  ttt:
+    code:
+      - TTT
+      - col(ttt)
     time: null
 
 # binary flags (emit only when positive/present)
@@ -143,11 +139,11 @@ patients:
       - col(ivh)
     time: null
 
-  outcome:
-    code:
-      - outcome
-    time: null
-    numeric_value: col(outcome)
+  # outcome:
+  #   code:
+  #     - OUTCOME
+  #   time: null
+  #   numeric_value: outcome
 
 administrations:
 # temporal events — each event maps to an absolute timestamp column created in preproc
@@ -175,72 +171,3 @@ procedures:
       neurovasc_codes:
         description: "description" # List of strings are columns to be collated
         parent_codes: "{ontology}:{code}"
-
-  # nimodipine:
-  #   code: 
-  #     - ATC
-  #     - C08CA06
-  #     #- col(nimodipine_code)
-  #   time: col(nimodipine)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-  #   _metadata:
-  #     neurovasc_codes:
-  #       description: "description" # List of strings are columns to be collated
-  #       parent_codes: "{ontology}:{nimodipine_code}"
-
-  # paracetamol:
-  #   code: 
-  #     - ATC
-  #     - N02BE01
-  #   time: col(paracetamol)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # nad:
-  #   code:
-  #     - ATC
-  #     - C01CA03
-  #   time: col(nad)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # corotrop:
-  #   code:
-  #     - ATC
-  #     - C01CE02
-  #   time: col(corotrop)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # morphine:
-  #   code:
-  #     - ATC
-  #     - N02AA01
-  #   time: col(morphine)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # dve:
-  #   code:
-  #     - ICD
-  #     - "10"
-  #     - "00P6X0Z"
-  #   time: col(dve)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # atl:
-  #   code:
-  #     - ICD
-  #     - "10"
-  #     - "Z98.6"
-  #   time: col(atl)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # iot:
-  #   code:
-  #     - ICD
-  #     - "10"
-  #     - 0BH17EZ
-  #   time: col(iot)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
-
-  # admission:
-  #   code: HOSPITAL_ADMISSION
-  #   time: col(admission)
-  #   time_format: "%Y-%m-%d %H:%M:%S"
