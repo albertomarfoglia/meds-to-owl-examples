@@ -77,9 +77,3 @@ tzdata==2025.3
 universal_pathlib==0.3.7
 urllib3==2.6.2
 wcwidth==0.2.14
-
-# GNN
-torch==2.4.1
-torch-geometric==2.6.1
-scikit-learn==1.5.1
-matplotlib==3.10.8
