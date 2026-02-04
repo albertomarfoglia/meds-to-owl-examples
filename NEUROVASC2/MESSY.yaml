@@ -1,0 +1,461 @@
+subject_id_col: ID_PAT
+
+contextual:
+  GENDER:
+    code:
+      - GENDER
+      - col(GENDER)
+    time: null
+
+  AGE:
+    code:
+      - AGE
+      - Years
+    time: null
+    numeric_value: col(AGE)
+
+  DUREE: # integer
+    code:
+      - DUREE
+    time: null
+    numeric_value: col(DUREE)
+
+  IN_MODE: # categorical
+    code:
+      - IN_MODE
+      - col(IN_MODE)
+    time: null
+
+  OUT_MODE: # categorical
+    code:
+      - OUT_MODE
+      - col(OUT_MODE)
+    time: null
+
+  IN_UNIT: # categorical
+    code:
+      - IN_UNIT
+      - col(IN_UNIT)
+    time: null
+
+  SERVICE_ENTREE: # categorical
+    code:
+      - SERVICE_ENTREE
+      - col(SERVICE_ENTREE)
+    time: null
+
+  OUT_UNIT: # categorical
+    code:
+      - OUT_UNIT
+      - col(OUT_UNIT)
+    time: null
+
+  SERVICE_SORTIE: # categorical
+    code:
+      - SERVICE_SORTIE
+      - col(SERVICE_SORTIE)
+    time: null
+
+  EMERGENCY: # binary
+    code:
+      - EMERGENCY
+      - col(EMERGENCY)
+    time: null
+
+  VISIT_TYPE: # categorical
+    code:
+      - VISIT_TYPE
+      - col(VISIT_TYPE)
+    time: null
+  
+  NB_SERVICES_PARCOURUS: # integer
+    code:
+      - NB_SERVICES_PARCOURUS
+    time: null
+    numeric_value: col(NB_SERVICES_PARCOURUS)
+
+  # UF_PARCOURUS: # categorical
+  #   code:
+  #     - UF_PARCOURUS
+  #     - col(UF_PARCOURUS)
+  #   time: null
+
+  # SERVICES_PARCOURUS: # categorical
+  #   code:
+  #     - SERVICES_PARCOURUS
+  #     - col(SERVICES_PARCOURUS)
+  #   time: null
+
+  HTA: # binary
+    code:
+      - HTA
+      - col(HTA)
+    time: null
+
+  HTA_IEC: # binary
+    code:
+      - HTA_IEC
+      - col(HTA_IEC)
+    time: null
+
+  HTA_ARA: # binary
+    code:
+      - HTA_ARA
+      - col(HTA_ARA)
+    time: null
+
+  HTA_BETA: # binary
+    code:
+      - HTA_BETA
+      - col(HTA_BETA)
+    time: null
+
+  HTA_TZD: # binary
+    code:
+      - HTA_TZD
+      - col(HTA_TZD)
+    time: null
+
+  HTA_ICA: # binary
+    code:
+      - HTA_ICA
+      - col(HTA_ICA)
+    time: null
+
+  diabete: # binary
+    code:
+      - diabete
+      - col(diabete)
+    time: null
+
+  diabete_med: # binary
+    code:
+      - diabete_med
+      - col(diabete_med)
+    time: null
+
+  cholesterol: # binary
+    code:
+      - cholesterol
+      - col(cholesterol)
+    time: null
+
+  cholesterol_med: # binary
+    code:
+      - cholesterol_med
+      - col(cholesterol_med)
+    time: null
+
+  antiagregant: # binary
+    code:
+      - antiagregant
+      - col(antiagregant)
+    time: null
+
+  anticoagulant: # binary
+    code:
+      - anticoagulant
+      - col(anticoagulant)
+    time: null
+
+  hormonal_med: # binary
+    code:
+      - hormonal_med
+      - col(hormonal_med)
+    time: null
+
+  tabac: # binary
+    code:
+      - tabac
+      - col(tabac)
+    time: null
+
+  alcool: # binary
+    code:
+      - alcool
+      - col(alcool)
+    time: null
+
+  apnee_sommeil: # binary
+    code:
+      - apnee_sommeil
+      - col(apnee_sommeil)
+    time: null
+
+  infarctus: # binary
+    code:
+      - infarctus
+      - col(infarctus)
+    time: null
+
+  maladie_goutte: # binary
+    code:
+      - maladie_goutte
+      - col(maladie_goutte)
+    time: null
+
+  ATCD_familiaux: # binary
+    code:
+      - ATCD_familiaux
+      - col(ATCD_familiaux)
+    time: null
+
+  SORTIE_REEDUC: # boolean
+    code:
+      - SORTIE_REEDUC
+      - col(SORTIE_REEDUC)
+    time: null
+
+  score_fisher: # integer
+    code:
+      - score_fisher
+    time: null
+    numeric_value: col(score_fisher)
+
+  score_wfns: # integer
+    code:
+      - score_wfns
+    time: null
+    numeric_value: col(score_wfns)
+
+  score_glasgow: # integer
+    code:
+      - score_glasgow
+    time: null
+    numeric_value: col(score_glasgow)
+
+sequential:
+  POIDS:
+    code: 
+      - POIDS
+      - Kg
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(POIDS)
+
+  nimodipine:
+    code:
+      - nimodipine
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  paracetamol:
+    code:
+      - paracetamol
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  noradrenaline:
+    code:
+      - noradrenaline
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  milrinone:
+    code:
+      - milrinone
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  morphine:
+    code:
+      - morphine
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  antiepideptique:
+    code:
+      - antiepideptique
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  antiepideptique_HSA:
+    code:
+      - antiepideptique_HSA
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  diagnostic:
+    code:
+      - diagnostic
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  DVE:
+    code:
+      - DVE
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  DVP:
+    code:
+      - DVP
+      - col(DVP)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  angioplastie:
+    code:
+      - angioplastie
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  intubation_orotracheale:
+    code:
+      - intubation_orotracheale
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  traitement_AIC:
+    code:
+      - traitement_AIC
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  fievre:
+    code:
+      - fievre
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  PA_normal:
+    code:
+      - PA_normal
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  PA_eleve:
+    code:
+      - PA_eleve
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  PA_bas:
+    code:
+      - PA_bas
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  PA_O2_bas:
+    code:
+      - PA_O2_bas
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  NA_normal:
+    code:
+      - NA_normal
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  NA_eleve:
+    code:
+      - NA_eleve
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  NA_bas:
+    code:
+      - NA_bas
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  desaturation_O2:
+    code:
+      - desaturation_O2
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  anemie:
+    code:
+      - anemie
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  glucose_normale:
+    code:
+      - glucose_normale
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  glucose_eleve:
+    code:
+      - glucose_eleve
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  glucose_bas:
+    code:
+      - glucose_bas
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  cephale:
+    code:
+      - cephale
+      - col(cephale)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  crise:
+    code:
+      - crise
+      - col(crise)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  GLASGOW_SEQ:
+    code:
+      - GLASGOW_SEQ
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(GLASGOW_SEQ)
+
+  vasospasme:
+    code:
+      - vasospasme
+      - col(vasospasme)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  hydrocephalie:
+    code:
+      - hydrocephalie
+      - col(hydrocephalie)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  DVE_txt:
+    code:
+      - DVE_txt
+      - col(DVE_txt)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  cardiomyopathie_stress:
+    code:
+      - cardiomyopathie_stress
+      - col(cardiomyopathie_stress)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  syndrome_perte_sel:
+    code:
+      - syndrome_perte_sel
+      - col(syndrome_perte_sel)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  hemorragie_intra_vent:
+    code:
+      - hemorragie_intra_vent
+      - col(hemorragie_intra_vent)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  ischemie_cerebrale_retardee:
+    code:
+      - ischemie_cerebrale_retardee
+      - col(ischemie_cerebrale_retardee)
+    time: col(DATE)
+    time_format: "%Y-%m-%d %H:%M:%S"

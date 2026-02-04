@@ -224,4 +224,9 @@ MIMIC/pre_MEDS
 MIMIC/raw_input
 .venv_mimic
 
+NEUROVASC2/raw_input/*
+NEUROVASC2/MEDS_cohort/*
+NEUROVASC2/pre_MEDS/*.parquet
+NEUROVASC2/metrics/*
+
 graph
