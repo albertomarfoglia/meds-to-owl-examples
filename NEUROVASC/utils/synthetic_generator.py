@@ -17,7 +17,6 @@ from itertools import accumulate
 import joblib
 import math
 from sklearn.preprocessing import MinMaxScaler
-from typing import List
 import requests
 
 

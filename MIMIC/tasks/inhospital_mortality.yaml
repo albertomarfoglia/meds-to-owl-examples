@@ -1,0 +1,41 @@
+# Task: 24-hour In-hospital Mortality Prediction
+predicates:
+  admission:
+    code: { regex: "ADMISSION//.*" }
+  discharge:
+    code: { regex: "DISCHARGE//.*" }
+  death:
+    code: MEDS_DEATH
+  discharge_or_death:
+    expr: or(discharge, death)
+
+patient_demographics:
+  male:
+    code: GENDER//M
+
+trigger: admission
+
+windows:
+  input:
+    start: NULL
+    end: trigger + 24h
+    start_inclusive: True
+    end_inclusive: True
+    has:
+      _ANY_EVENT: (5, None)
+    index_timestamp: end
+  gap:
+    start: trigger
+    end: start + 48h
+    start_inclusive: False
+    end_inclusive: True
+    has:
+      admission: (None, 0)
+      discharge: (None, 0)
+      death: (None, 0)
+  target:
+    start: gap.end
+    end: start -> discharge_or_death
+    start_inclusive: False
+    end_inclusive: True
+    label: death
