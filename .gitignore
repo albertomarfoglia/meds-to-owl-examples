@@ -230,3 +230,4 @@ NEUROVASC2/pre_MEDS/*.parquet
 NEUROVASC2/metrics/*
 
 graph
+MIMIC/mimic.tar.gz
