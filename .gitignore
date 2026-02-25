@@ -231,3 +231,7 @@ NEUROVASC2/metrics/*
 
 graph
 MIMIC/mimic.tar.gz
+meds2rdf/*
+*.sqlite
+
+MEDS_nt_cohort*

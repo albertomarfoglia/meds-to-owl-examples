@@ -1,7 +1,7 @@
 joblib==1.4.2
 matplotlib-inline==0.2.1
 meds==0.4.1
-meds2rdf @ git+https://github.com/TeamHeKA/meds2rdf.git
+meds2rdf @ git+https://github.com/TeamHeKA/meds2rdf.git@feature/performance-scalability
 MEDS_extract==0.5.0
 MEDS_transforms==0.6.1
 numpy==1.26.4
