@@ -9,9 +9,9 @@ predicates:
   discharge_or_death:
     expr: or(discharge, death)
 
-patient_demographics:
-  male:
-    code: GENDER//M
+# patient_demographics:
+#   male:
+#     code: GENDER//M
 
 trigger: admission
 

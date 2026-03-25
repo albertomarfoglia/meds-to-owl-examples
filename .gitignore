@@ -234,4 +234,7 @@ MIMIC/mimic.tar.gz
 meds2rdf/*
 *.sqlite
 
-MEDS_nt_cohort*
+MEDS_*
+.vscode
+
+exports
