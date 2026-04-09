@@ -1,0 +1,156 @@
+experiments:
+  mortality:
+    - task: first_24_in_hospital_mortality
+      sample_size: 20000
+      num_of_samples: 5
+      fixed_true: True
+      window: 24h
+      agg: 12h
+      metadata:
+        true_values: 11179
+        false_values: 389123
+        total_patients: 165113
+        unique_true_values: 10718
+        unique_false_values: 154395
+        events: 5070128
+
+    - task: first_48_in_hospital_mortality
+      sample_size: 20000
+      num_of_samples: 5
+      fixed_true: True
+      window: 48h
+      agg: 1d
+      metadata:
+        true_values: 13430
+        false_values: 367643
+        total_patients: 148165
+        unique_true_values: 12505
+        unique_false_values: 135660
+        evetns: 5667206
+
+    - task: first_24_in_icu_mortality
+      sample_size: 8768
+      num_of_samples: 5
+      fixed_true: true
+      window: 24h
+      agg: 12h
+      metadata:
+        total_patients: 44044
+        unique_true_values: 4384
+        unique_false_values: 39660
+        events: 6131002
+
+    - task: first_48_in_icu_mortality
+      sample_size: 8666
+      num_of_samples: 5
+      fixed_true: true
+      window: 48h
+      agg: 1d
+      metadata:
+        true_values: 4536
+        false_values: 61254
+        total_patients: 47942
+        unique_true_values: 4333
+        unique_false_values: 43609
+        events: 6861079
+
+    - task: post_hospital_discharge_mortality_30d
+      sample_size: 5000
+      num_of_samples: 2
+      fixed_true: false
+      window: full
+      agg: 1w
+      metadata:
+        true_values: 13147
+        false_values: 521505
+        total_patients: 218379
+        unique_true_values: 11260
+        unique_false_values: 207119
+        events: 5320207
+
+    - task: post_hospital_discharge_mortality_1y
+      sample_size: 10000
+      num_of_samples: 5
+      fixed_true: false
+      window: full
+      agg: 1mo
+      metadata:
+        true_values: 65024
+        false_values: 469628
+        total_patients: 218379
+        unique_true_values: 29732
+        unique_false_values: 188647
+        events: 6092516
+
+  los:
+    - task: first_48_in_hospital_los
+      sample_size: 20000
+      num_of_samples: 5
+      fixed_true: false
+      window: 48h
+      agg: 12h
+      metadata:
+        true_values: 210837
+        false_values: 255951
+        total_patients: 204850
+        unique_true_values: 125497
+        unique_false_values: 79353
+        events: 4717890
+
+    - task: first_48_in_icu_los
+      sample_size: 7408
+      num_of_samples: 5
+      fixed_true: false
+      window: 48h
+      agg: 12h
+      metadata:
+        true_values: 46935
+        false_values: 31044
+        total_patients: 56850
+        unique_true_values: 38329
+        unique_false_values: 18521
+        events: 7201015
+
+  readmission:
+    - task: readmission_30d
+      sample_size: 10000
+      num_of_samples: 5
+      fixed_true: false
+      window: full
+      agg: 1w
+      metadata:
+        true_values: 94656
+        false_values: 324236
+        total_patients: 145367
+        unique_true_values: 40488
+        unique_false_values: 104879
+        events: 5645834
+
+  phenotyping:
+    - task: ckd_in_diabetics_within_5y_of_kidney_panel
+      sample_size: 1876
+      num_of_samples: 5
+      fixed_true: true
+      window: full
+      agg: 1d
+      metadata:
+        true_values: 3029
+        false_values: 31187
+        total_patients: 6071
+        unique_true_values: 938
+        unique_false_values: 5133
+        events: 1983048
+
+    - task: myocardial_infarction_1-5y_phenotyping
+      sample_size: 886
+      num_of_samples: 5
+      fixed_true: true
+      window: full
+      agg: 1d
+      metadata:
+        true_values: 1312
+        false_values: 76809
+        total_patients: 30499
+        unique_true_values: 443
+        unique_false_values: 30056
+        events: 522789

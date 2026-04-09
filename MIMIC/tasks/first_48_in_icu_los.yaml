@@ -1,6 +1,6 @@
 description: >-
   This file specifies the base configuration for the prediction of a icu los being greater than 3days,
-  leveraging only the first 24 hours of data after admission, with a 48 hour gap between the input window
+  leveraging only the first 48 hours of data after admission, with a 24 hour gap between the input window
   and the target window. Patients who die or are discharged in the gap window are excluded. Note that this
   task is in-**ICU** los, not in-**HOSPITAL** los which is a different task.
 
@@ -19,13 +19,13 @@ trigger: icu_admission
 windows:
   input:
     start: NULL
-    end: trigger + 24h
+    end: trigger + 48h
     start_inclusive: True
     end_inclusive: True
     index_timestamp: end
   gap:
     start: input.end
-    end: start + 48h
+    end: start + 24h
     start_inclusive: False
     end_inclusive: True
     has:

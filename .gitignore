@@ -238,3 +238,7 @@ MEDS_*
 .vscode
 
 exports
+
+*.old*
+
+*/**/*.old*
