@@ -5,7 +5,7 @@ experiments:
       num_of_samples: 5
       fixed_true: True
       window: 24h
-      agg: 12h
+      agg: 1d
       metadata:
         true_values: 11179
         false_values: 389123
@@ -33,7 +33,7 @@ experiments:
       num_of_samples: 5
       fixed_true: true
       window: 24h
-      agg: 12h
+      agg: 1d
       metadata:
         total_patients: 44044
         unique_true_values: 4384
@@ -132,7 +132,7 @@ experiments:
       num_of_samples: 5
       fixed_true: true
       window: full
-      agg: 1d
+      agg: 1w
       metadata:
         true_values: 3029
         false_values: 31187
@@ -146,7 +146,7 @@ experiments:
       num_of_samples: 5
       fixed_true: true
       window: full
-      agg: 1d
+      agg: 1w
       metadata:
         true_values: 1312
         false_values: 76809

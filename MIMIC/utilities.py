@@ -3,15 +3,25 @@ from pathlib import Path
 import numpy as np
 import os
 import shutil
+import pandas as pd
+
+from sklearn.metrics import (
+    f1_score,
+    accuracy_score,
+    roc_auc_score,
+    average_precision_score,
+)
+
 
 def generate_samples(
-    n_folds: int, labels: pl.LazyFrame, size: int, seed: int | None, fixed_true=False
+    n_folds: int,
+    labels: pl.LazyFrame,
+    size: int,
+    seed: int | None,
+    low_true_values=False,
 ):
     true_values = (
         labels.filter(pl.col("boolean_value"))
-        # .sort(pl.col("prediction_time"), descending=False)
-        # .group_by("subject_id")
-        # .head(1)
         .group_by("subject_id")
         .agg(pl.all().sample(n=1, seed=seed))
         .explode(pl.all().exclude("subject_id"))
@@ -25,9 +35,6 @@ def generate_samples(
             on="subject_id",
             how="anti",
         )
-        # .sort(pl.col("prediction_time"), descending=False)
-        # .group_by("subject_id")
-        # .head(1)
         .group_by("subject_id")
         .agg(pl.all().sample(n=1, seed=seed))
         .explode(pl.all().exclude("subject_id"))
@@ -36,28 +43,26 @@ def generate_samples(
 
     fold_length = int(size / 2)
 
-    false_values = false_values.sample(
-        n=fold_length * n_folds, shuffle=True, seed=seed, with_replacement=False
-    )
+    false_values = false_values.sample(n=fold_length * n_folds, shuffle=True, seed=seed)
     false_samples = [
         false_values.slice(i * fold_length, fold_length) for i in range(n_folds)
     ]
 
-    if fixed_true:
-        true_values = true_values.sample(
-            n=fold_length, shuffle=True, seed=seed, with_replacement=False
-        )
-        return [false_samples[i].extend(true_values) for i in range(n_folds)]
+    if low_true_values:
+        true_samples = [
+            true_values.sample(n=fold_length, shuffle=True, seed=seed)
+            for _ in range(n_folds)
+        ]
     else:
         true_values = true_values.sample(
-            n=fold_length * n_folds, shuffle=True, seed=seed, with_replacement=False
+            n=fold_length * n_folds, shuffle=True, seed=seed
         )
 
         true_samples = [
             true_values.slice(i * fold_length, fold_length) for i in range(n_folds)
         ]
 
-        return [false_samples[i].extend(true_samples[i]) for i in range(n_folds)]
+    return [pl.concat([false_samples[i], true_samples[i]]) for i in range(n_folds)]
 
 
 bad_strings = ["___", "None", "N/A", "", " "]
@@ -73,12 +78,10 @@ remove_long_text = (
 )
 
 birthdate_to_age = [
-    (
-        pl.when(pl.col("code") == "MEDS_BIRTH")
-        .then((pl.col("prediction_time") - pl.col("time")) / pl.duration(days=365))
-        .otherwise(None)
-        .alias("numeric_value")
-    ),
+    pl.when(pl.col("code") == "MEDS_BIRTH")
+    .then((pl.col("prediction_time") - pl.col("time")) / pl.duration(days=365))
+    .otherwise(pl.col("numeric_value"))  # <-- KEEP existing values
+    .alias("numeric_value"),
     pl.when(pl.col("code") == "MEDS_BIRTH")
     .then(None)
     .otherwise(pl.col("time"))
@@ -233,13 +236,19 @@ PREFIX_MAP = {
 }
 
 
-def freq_codes(events: pl.LazyFrame, quantile=0.15):
+def freq_codes(events: pl.LazyFrame, quantile=0.15, inv=False):
+    op = pl.col("len").lt if inv else pl.col("len").gt
+
     return (
         events.group_by("code")
         .len()
-        .filter(pl.col("len") > (pl.col("len").quantile(0.15)))
+        .filter(op(pl.col("len").quantile(quantile)))
         .select("code")
     )
+
+
+def freq_codes_v(events: pl.LazyFrame, freq=10):
+    return events.group_by("code").len().filter(pl.col("len") > freq).select("code")
 
 
 def aggregate_events(events: pl.LazyFrame, agg: str = "6h"):
@@ -248,19 +257,14 @@ def aggregate_events(events: pl.LazyFrame, agg: str = "6h"):
         .group_by(["subject_id", "code", "time"])
         .agg(
             [
-                pl.col("numeric_value")
-                .mean()
-                .alias("numeric_value"),  # average numeric values
-                pl.col("text_value")
-                .first()
-                .alias("text_value"),  # keep the first text value
+                pl.col("numeric_value").mean().alias("numeric_value"),
+                #pl.col("text_value").first().alias("text_value"),
                 pl.col("prediction_time").first().alias("prediction_time"),
                 pl.col("boolean_value").first().alias("boolean_value"),
             ]
         )
         .sort(["subject_id", "time"])
     )
-
 
 def split_events(dt: pl.DataFrame):
     subjects = (
@@ -296,24 +300,121 @@ def split_events(dt: pl.DataFrame):
     )
     return (subjects, events, labels)
 
-def create_meds_cohort(events: pl.DataFrame, orig_dir: str, output_dir: str):
+
+def create_meds_cohort(
+    events: pl.DataFrame,
+    orig_dir: str,
+    output_dir: str,
+    columns: list[str] = ["subject_id", "code", "time", "numeric_value", "text_value"],
+):
     (split_s, split_e, split_l) = split_events(events)
 
     split_s.write_parquet(f"{output_dir}/metadata/subject_splits.parquet")
 
-    shutil.copy(f"{orig_dir}/metadata/codes.parquet", f"{output_dir}/metadata/codes.parquet")
-    shutil.copy(f"{orig_dir}/metadata/dataset.json", f"{output_dir}/metadata/dataset.json")
+    shutil.copy(
+        f"{orig_dir}/metadata/codes.parquet", f"{output_dir}/metadata/codes.parquet"
+    )
+    shutil.copy(
+        f"{orig_dir}/metadata/dataset.json", f"{output_dir}/metadata/dataset.json"
+    )
 
     for split in ["train", "held_out", "tuning"]:
         df_events = split_e.filter(pl.col("split") == split)
         df_labels = split_l.filter(pl.col("split") == split)
         os.makedirs(f"{output_dir}/data/{split}", exist_ok=True)
         os.makedirs(f"{output_dir}/labels/{split}", exist_ok=True)
-        df_events.select(
-            ["subject_id", "code", "time", "numeric_value", "text_value"]
-        ).write_parquet(f"{output_dir}/data/{split}/0.parquet")
+        df_events.select(columns).write_parquet(f"{output_dir}/data/{split}/0.parquet")
         df_labels.select(
             ["subject_id", "prediction_time", "boolean_value"]
         ).write_parquet(f"{output_dir}/labels/{split}/0.parquet")
 
     return (split_s, split_e, split_l)
+
+
+def compute_metrics(y_true, y_pred, y_proba):
+    f1_per_class = f1_score(y_true, y_pred, average=None)
+    f1_macro = f1_score(y_true, y_pred, average="macro")
+    f1_weighted = f1_score(y_true, y_pred, average="weighted")
+    accuracy = accuracy_score(y_true, y_pred)
+    ap = average_precision_score(y_true, y_proba)
+
+    # AUC can fail if only one class present
+    try:
+        auc = roc_auc_score(y_true, y_proba)
+    except ValueError:
+        auc = np.nan
+
+    return {
+        "f1_false": f1_per_class[0],  # type: ignore
+        "f1_true": f1_per_class[1],  # type: ignore
+        "f1_macro": f1_macro,
+        "f1_weighted": f1_weighted,
+        "accuracy": accuracy,
+        "auc": auc,
+        "ap": ap,
+    }
+
+
+def aggregate_metrics(dict_metrics: dict):
+    tasks_summary = {}
+
+    for task, runs in dict_metrics.items():
+        if not runs:
+            print(f"⚠️ No valid runs for task: {task}")
+            continue
+
+        metrics_names = runs[0].keys()
+        summary = {}
+
+        for m in metrics_names:
+            values = np.array([r[m] for r in runs], dtype=float)
+
+            summary[m] = {
+                "mean": round(np.nanmean(values), 2),
+                "std": round(np.nanstd(values), 2),
+            }
+
+        tasks_summary[task] = summary
+
+    return tasks_summary
+
+
+def pretty_metrics_to_csv(metrics: dict, output_path: Path):
+    rows = []
+
+    for task, metrics in metrics.items():
+        row = {"task": task}
+
+        for m, stats in metrics.items():
+            row[m] = f"{stats['mean']:.2f} ± {stats['std']:.2f}"
+
+        rows.append(row)
+
+    pd.DataFrame(rows).to_csv(output_path, index=False, sep="\t")
+
+
+def get_latest_run(path: Path) -> Path | None:
+    runs = [p for p in path.iterdir() if p.is_dir()]
+    if not runs:
+        return None
+    return max(runs, key=lambda p: p.stat().st_mtime)
+
+
+def get_metrics_file_path(base_path: Path) -> Path | None:
+    if not base_path.exists():
+        print(f"⚠️ Missing path: {base_path}")
+        return None
+
+    latest_run = get_latest_run(base_path)
+
+    if latest_run is None:
+        print(f"⚠️ No runs found in: {base_path}")
+        return None
+
+    file_path = latest_run / "best_trial" / "held_out_predictions.parquet"
+
+    if not file_path.exists():
+        print(f"⚠️ Missing file: {file_path}")
+        return None
+
+    return file_path
