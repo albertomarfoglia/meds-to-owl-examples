@@ -1,6 +1,7 @@
 import pandas as pd
 import joblib
 from .neurovasc_meta import CONTEXTUAL_VARIABLES, SEQUENTIAL_VARIABLES, KEY_VARIABLES
+import numpy as np
 
 def generate_meds_preprocessed(
     df : pd.DataFrame,
@@ -15,7 +16,7 @@ def generate_meds_preprocessed(
     _df = _df.set_index("INDEX")
     
     _df["DATE"] = pd.to_datetime(_df["DATE"], errors="coerce")
-    _df[SEQUENTIAL_VARIABLES] = _df[SEQUENTIAL_VARIABLES].replace(False, pd.NA)
+    _df[SEQUENTIAL_VARIABLES] = _df[SEQUENTIAL_VARIABLES].replace(False, np.nan)
 
     df_patients = _df[KEY_VARIABLES + CONTEXTUAL_VARIABLES].drop_duplicates(subset='ID_PAT', keep='first')
     df_patients = df_patients.sort_index()
