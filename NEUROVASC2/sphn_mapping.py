@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from string import Template
 import hashlib
+from itertools import count
 
 
 @dataclass
@@ -108,7 +109,6 @@ SEMANTIC_MAP = {value: key for key, values in _SEMANTIC_MAP.items() for value in
 
 PREFIX = """
 @prefix sphn: <http://sphn.org/> .
-@prefix nvasc: <http://nvasc.org/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -117,109 +117,99 @@ PREFIX = """
 TEMPLATES = {
     "ProblemCondition": Template(
         """
-nvasc:$event_id a sphn:ProblemCondition ;
-    rdfs:label "$label"^^xsd:string ;
-    sphn:hasCode <nvasc:code_$code> ;
-    sphn:hasRecordDateTime "$date"^^xsd:dateTime .
+<http://nvasc/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/ProblemCondition> .
+<http://nvasc/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
+<http://nvasc/$event_id> <http://sphn.org/hasRecordDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasCondition nvasc:$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasCondition> <http://nvasc.org/$event_id> .
 """
     ),
     "Procedure": Template(
         """
-nvasc:$event_id a sphn:Procedure ;
-    rdfs:label "$label"^^xsd:string ;
-    sphn:hasCode nvasc:code_$code ;
-    sphn:hasStartDateTime "$date"^^xsd:dateTime .
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Procedure> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasProcedure nvasc:$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasProcedure> <http://nvasc.org/$event_id> .
 """
     ),
     "DrugAdministration": Template(
         """
-nvasc:$event_id a sphn:DrugAdministrationEvent ;
-    rdfs:label "$label"^^xsd:string ;
-    sphn:hasDrug nvasc:drug_$code ;
-    sphn:hasStartDateTime "$date"^^xsd:dateTime .
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/DrugAdministrationEvent> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasDrug> <http://nvasc.org/drug_$code> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasDrugAdministrationEvent nvasc:$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasDrugAdministrationEvent> <http://nvasc.org/$event_id> .
 """
     ),
     "MeasurementCode": Template(
         """
-nvasc:$event_id a sphn:Measurement ;
-    rdfs:label "$label"^^xsd:string ;
-    sphn:hasCode nvasc:code_$code ;
-    sphn:hasStartDateTime "$date"^^xsd:dateTime .
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Measurement> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasMeasurement nvasc:$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasMeasurement> <http://nvasc.org/$event_id> .
 """
     ),
     "MeasurementNumeric": Template(
         """
-nvasc:$event_id a sphn:Measurement ;
-    rdfs:label "$label"^^xsd:string ;
-    sphn:hasCode nvasc:code_$code ;
-    sphn:hasStartDateTime "$date"^^xsd:dateTime ;
-    sphn:hasResult [
-        rdf:type sphn:AssessmentResult ;
-        sphn:hasQuantity [
-            rdf:type sphn:Quantity ;
-            sphn:hasValue "$numeric_value" ;
-        ]
-    ] .
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Measurement> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasResult> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/AssessmentResult> .
+_:b$b1 <http://sphn.org/hasQuantity> _:b$b2 .
+_:b$b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b2 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasMeasurement nvasc:$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasMeasurement> <http://nvasc.org/$event_id> .
 """
     ),
     "Gender": Template(
         """
-nvasc:gender_$event_id a sphn:AdministrativeGender ;
-    sphn:hasCode nvasc:code_$code .
+<http://nvasc.org/gender_$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/AdministrativeGender> .
+<http://nvasc.org/gender_$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasGender nvasc:gender_$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasGender> <http://nvasc.org/gender_$event_id> .
 """
     ),
     "Age": Template(
         """
-nvasc:age_$event_id a sphn:Age ;
-    sphn:hasQuantity [
-        rdf:type sphn:Quantity ;
-        sphn:hasValue "$numeric_value" ;
-        sphn:hasUnit "years"
-    ] .
+<http://nvasc.org/age_$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Age> .
+<http://nvasc.org/age_$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+_:b$b1 <http://sphn.org/hasUnit> "years"^^<http://www.w3.org/2001/XMLSchema#string> .
 
-nvasc:synth_patient_$patient_id
-    nvasc:hasAge nvasc:age_$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasAge> <http://nvasc.org/age_$event_id> .
 """
     ),
     "DiagnosisCode": Template(
         """
-    nvasc:$event_id a sphn:Diagnosis ;
-        rdfs:label "$label"^^xsd:string ;
-        sphn:hasCode nvasc:code_$code .
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
         
-    nvasc:synth_patient_$patient_id nvasc:hasDiagnosis nvasc:$event_id .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasDiagnosis> <http://nvasc.org/$event_id> .
     """
     ),
     "DiagnosisNumeric": Template(
         """
-    nvasc:$event_id a sphn:Diagnosis ;
-        rdfs:label "$label" ;
-        sphn:hasQuantity [ rdf:type sphn:Quantity ;
-                            sphn:hasValue "$numeric_value" ] .
-    
-    nvasc:synth_patient_$patient_id nvasc:hasDiagnosis nvasc:$event_id .
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasDiagnosis> <http://nvasc.org/$event_id> .
     """
     ),
 }
-
 
 def make_id(*parts):
 
@@ -227,6 +217,11 @@ def make_id(*parts):
 
     return hashlib.md5(txt.encode()).hexdigest()
 
+
+blank_node_counter = count()
+
+def new_bnode():
+    return next(blank_node_counter)
 
 def render_event(event: SemanticEvent):
 
@@ -240,6 +235,8 @@ def render_event(event: SemanticEvent):
         date=event.time.isoformat() if event.time else "",
         numeric_value=event.numeric_value,
         unit=event.unit or "",
+        b1=new_bnode(),
+        b2=new_bnode()
     )
 
 
