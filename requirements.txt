@@ -16,3 +16,4 @@ es-aces==0.7.1
 requests
 xgboost==3.2.0
 matplotlib==3.10.9
+shap==0.51.0
