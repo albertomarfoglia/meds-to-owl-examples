@@ -31,4 +31,4 @@ def generate_meds_preprocessed(
     if outcome_path:
         joblib.dump(df_outcomes.to_list(), outcome_path)
 
-    return (df_contextual, df_sequential, pd.DataFrame(df_outcomes))
+    return (df_contextual, df_sequential, df_outcomes)
