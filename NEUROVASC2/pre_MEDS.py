@@ -10,20 +10,27 @@ def generate_meds_preprocessed(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     _df = df.copy()
 
-    pat_to_id = {k: v for v, k in enumerate(set(_df["ID_PAT"]), start=0)}
-    _df["ID_PAT"] = _df["ID_PAT"].map(pat_to_id)
-    _df["INDEX"] = _df["ID_PAT"]
+    pat_to_id = {k: v for v, k in enumerate(set(_df["Patient_ID"]), start=0)}
+    _df["Patient_ID"] = _df["Patient_ID"].map(pat_to_id)
+    _df["INDEX"] = _df["Patient_ID"]
     _df = _df.set_index("INDEX")
     
-    _df["DATE"] = pd.to_datetime(_df["DATE"], errors="coerce")
+    _df["Timestamp"] = pd.to_datetime(_df["Timestamp"], errors="coerce")
     _df[SEQUENTIAL_VARIABLES] = _df[SEQUENTIAL_VARIABLES].replace(False, np.nan)
 
-    df_patients = _df[KEY_VARIABLES + CONTEXTUAL_VARIABLES].drop_duplicates(subset='ID_PAT', keep='first')
+    df_patients = _df[KEY_VARIABLES + CONTEXTUAL_VARIABLES].drop_duplicates(subset='Patient_ID', keep='first')
     df_patients = df_patients.sort_index()
 
-    df_contextual = df_patients.drop(columns=["outcomes"])
+    df_contextual = df_patients.drop(columns=["Outcome"])
     df_sequential = _df[KEY_VARIABLES + SEQUENTIAL_VARIABLES].sort_index()
-    df_outcomes = df_patients["outcomes"].astype(int)
+
+    outcome_mapping = {
+        "DOMICILE": 0,
+        "REEDUC_TRANSFERT": 1,
+        "DECES": 2,
+    }
+
+    df_outcomes = df_patients["Outcome"].map(outcome_mapping).astype(int)
 
     if output_path:
         df_contextual.to_parquet(f"{output_path}/contextual.parquet", index=False)

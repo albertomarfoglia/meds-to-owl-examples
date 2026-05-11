@@ -14,3 +14,5 @@ scikit-learn==1.5.1
 scipy==1.16.3
 es-aces==0.7.1
 requests
+xgboost==3.2.0
+matplotlib==3.10.9

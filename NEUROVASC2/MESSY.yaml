@@ -1,461 +1,449 @@
-subject_id_col: ID_PAT
+subject_id_col: Patient_ID
 
 contextual:
-  GENDER:
+  Gender:
     code:
-      - GENDER
-      - col(GENDER)
+      - Gender
+      - col(Gender)
     time: null
 
-  AGE:
+  Age:
     code:
-      - AGE
+      - Age
       - Years
     time: null
-    numeric_value: col(AGE)
+    numeric_value: col(Age)
 
-  DUREE: # integer
+  Length_of_Stay:
     code:
-      - DUREE
+      - Length_of_Stay
     time: null
-    numeric_value: col(DUREE)
+    numeric_value: col(Length_of_Stay)
 
-  IN_MODE: # categorical
+  Admission_Mode:
     code:
-      - IN_MODE
-      - col(IN_MODE)
-    time: null
-
-  OUT_MODE: # categorical
-    code:
-      - OUT_MODE
-      - col(OUT_MODE)
+      - Admission_Mode
+      - col(Admission_Mode)
     time: null
 
-  IN_UNIT: # categorical
-    code:
-      - IN_UNIT
-      - col(IN_UNIT)
-    time: null
-
-  SERVICE_ENTREE: # categorical
-    code:
-      - SERVICE_ENTREE
-      - col(SERVICE_ENTREE)
-    time: null
-
-  OUT_UNIT: # categorical
-    code:
-      - OUT_UNIT
-      - col(OUT_UNIT)
-    time: null
-
-  SERVICE_SORTIE: # categorical
-    code:
-      - SERVICE_SORTIE
-      - col(SERVICE_SORTIE)
-    time: null
-
-  EMERGENCY: # binary
-    code:
-      - EMERGENCY
-      - col(EMERGENCY)
-    time: null
-
-  VISIT_TYPE: # categorical
-    code:
-      - VISIT_TYPE
-      - col(VISIT_TYPE)
-    time: null
-  
-  NB_SERVICES_PARCOURUS: # integer
-    code:
-      - NB_SERVICES_PARCOURUS
-    time: null
-    numeric_value: col(NB_SERVICES_PARCOURUS)
-
-  # UF_PARCOURUS: # categorical
+  # Discharge_Mode:
   #   code:
-  #     - UF_PARCOURUS
-  #     - col(UF_PARCOURUS)
+  #     - Discharge_Mode
+  #     - col(Discharge_Mode)
   #   time: null
 
-  # SERVICES_PARCOURUS: # categorical
+  Admission_Unit:
+    code:
+      - Admission_Unit
+      - col(Admission_Unit)
+    time: null
+
+  Admission_Department:
+    code:
+      - Admission_Department
+      - col(Admission_Department)
+    time: null
+
+  # Discharge_Unit:
   #   code:
-  #     - SERVICES_PARCOURUS
-  #     - col(SERVICES_PARCOURUS)
+  #     - Discharge_Unit
+  #     - col(Discharge_Unit)
   #   time: null
 
-  HTA: # binary
+  # Discharge_Department:
+  #   code:
+  #     - Discharge_Department
+  #     - col(Discharge_Department)
+  #   time: null
+
+  Emergency_Admission:
     code:
-      - HTA
-      - col(HTA)
+      - Emergency_Admission
+      - col(Emergency_Admission)
     time: null
 
-  HTA_IEC: # binary
+  Visit_Type:
     code:
-      - HTA_IEC
-      - col(HTA_IEC)
+      - Visit_Type
+      - col(Visit_Type)
     time: null
 
-  HTA_ARA: # binary
+  Number_of_Visited_Departments:
     code:
-      - HTA_ARA
-      - col(HTA_ARA)
+      - Number_of_Visited_Departments
+    time: null
+    numeric_value: col(Number_of_Visited_Departments)
+
+  Hypertension:
+    code:
+      - Hypertension
+      - col(Hypertension)
     time: null
 
-  HTA_BETA: # binary
+  Hypertension_IEC:
     code:
-      - HTA_BETA
-      - col(HTA_BETA)
+      - Hypertension_IEC
+      - col(Hypertension_IEC)
     time: null
 
-  HTA_TZD: # binary
+  Hypertension_ARA:
     code:
-      - HTA_TZD
-      - col(HTA_TZD)
+      - Hypertension_ARA
+      - col(Hypertension_ARA)
     time: null
 
-  HTA_ICA: # binary
+  Hypertension_BETA:
     code:
-      - HTA_ICA
-      - col(HTA_ICA)
+      - Hypertension_BETA
+      - col(Hypertension_BETA)
     time: null
 
-  diabete: # binary
+  Hypertension_TZD:
     code:
-      - diabete
-      - col(diabete)
+      - Hypertension_TZD
+      - col(Hypertension_TZD)
     time: null
 
-  diabete_med: # binary
+  Hypertension_ICA:
     code:
-      - diabete_med
-      - col(diabete_med)
+      - Hypertension_ICA
+      - col(Hypertension_ICA)
     time: null
 
-  cholesterol: # binary
+  Diabetes:
     code:
-      - cholesterol
-      - col(cholesterol)
+      - Diabetes
+      - col(Diabetes)
     time: null
 
-  cholesterol_med: # binary
+  Diabetes_Med:
     code:
-      - cholesterol_med
-      - col(cholesterol_med)
+      - Diabetes_Med
+      - col(Diabetes_Med)
     time: null
 
-  antiagregant: # binary
+  Cholesterol:
     code:
-      - antiagregant
-      - col(antiagregant)
+      - Cholesterol
+      - col(Cholesterol)
     time: null
 
-  anticoagulant: # binary
+  Cholesterol_Med:
     code:
-      - anticoagulant
-      - col(anticoagulant)
+      - Cholesterol_Med
+      - col(Cholesterol_Med)
     time: null
 
-  hormonal_med: # binary
+  Antiplatelet_Therapy:
     code:
-      - hormonal_med
-      - col(hormonal_med)
+      - Antiplatelet_Therapy
+      - col(Antiplatelet_Therapy)
     time: null
 
-  tabac: # binary
+  Anticoagulant_Therapy:
     code:
-      - tabac
-      - col(tabac)
+      - Anticoagulant_Therapy
+      - col(Anticoagulant_Therapy)
     time: null
 
-  alcool: # binary
+  Hormonal_Therapy:
     code:
-      - alcool
-      - col(alcool)
+      - Hormonal_Therapy
+      - col(Hormonal_Therapy)
     time: null
 
-  apnee_sommeil: # binary
+  Smoking:
     code:
-      - apnee_sommeil
-      - col(apnee_sommeil)
+      - Smoking
+      - col(Smoking)
     time: null
 
-  infarctus: # binary
+  Alcohol_Use:
     code:
-      - infarctus
-      - col(infarctus)
+      - Alcohol_Use
+      - col(Alcohol_Use)
     time: null
 
-  maladie_goutte: # binary
+  Sleep_Apnea:
     code:
-      - maladie_goutte
-      - col(maladie_goutte)
+      - Sleep_Apnea
+      - col(Sleep_Apnea)
     time: null
 
-  ATCD_familiaux: # binary
+  Myocardial_Infarction:
     code:
-      - ATCD_familiaux
-      - col(ATCD_familiaux)
+      - Myocardial_Infarction
+      - col(Myocardial_Infarction)
     time: null
 
-  SORTIE_REEDUC: # boolean
+  Gout:
     code:
-      - SORTIE_REEDUC
-      - col(SORTIE_REEDUC)
+      - Gout
+      - col(Gout)
     time: null
 
-  score_fisher: # integer
+  Family_History:
     code:
-      - score_fisher
+      - Family_History
+      - col(Family_History)
     time: null
-    numeric_value: col(score_fisher)
 
-  score_wfns: # integer
-    code:
-      - score_wfns
-    time: null
-    numeric_value: col(score_wfns)
+  # Rehabilitation_Discharge:
+  #   code:
+  #     - Rehabilitation_Discharge
+  #     - col(Rehabilitation_Discharge)
+  #   time: null
 
-  score_glasgow: # integer
+  Fisher_Score:
     code:
-      - score_glasgow
+      - Fisher_Score
     time: null
-    numeric_value: col(score_glasgow)
+    numeric_value: col(Fisher_Score)
+
+  WFNS_Score:
+    code:
+      - WFNS_Score
+    time: null
+    numeric_value: col(WFNS_Score)
+
+  Glasgow_Coma_Scale:
+    code:
+      - Glasgow_Coma_Scale
+    time: null
+    numeric_value: col(Glasgow_Coma_Scale)
 
 sequential:
-  POIDS:
-    code: 
-      - POIDS
+  Weight:
+    code:
+      - Weight
       - Kg
-    time: col(DATE)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
-    numeric_value: col(POIDS)
+    numeric_value: col(Weight)
 
-  nimodipine:
+  Nimodipine:
     code:
-      - nimodipine
-    time: col(DATE)
-    time_format: "%Y-%m-%d %H:%M:%S"
-
-  paracetamol:
-    code:
-      - paracetamol
-    time: col(DATE)
+      - Nimodipine
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  noradrenaline:
+  Paracetamol:
     code:
-      - noradrenaline
-    time: col(DATE)
+      - Paracetamol
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  milrinone:
+  Norepinephrine:
     code:
-      - milrinone
-    time: col(DATE)
+      - Norepinephrine
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  morphine:
+  Milrinone:
     code:
-      - morphine
-    time: col(DATE)
+      - Milrinone
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  antiepideptique:
+  Morphine:
     code:
-      - antiepideptique
-    time: col(DATE)
+      - Morphine
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  antiepideptique_HSA:
+  Antiepileptic_Treatment:
     code:
-      - antiepideptique_HSA
-    time: col(DATE)
+      - Antiepileptic_Treatment
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  diagnostic:
+  Antiepileptic_Treatment_SAH:
     code:
-      - diagnostic
-    time: col(DATE)
+      - Antiepileptic_Treatment_SAH
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  DVE:
+  Diagnosis:
     code:
-      - DVE
-    time: col(DATE)
+      - Diagnosis
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  DVP:
+  External_Ventricular_Drain:
     code:
-      - DVP
-      - col(DVP)
-    time: col(DATE)
+      - External_Ventricular_Drain
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  angioplastie:
+  Ventriculoperitoneal_Shunt:
     code:
-      - angioplastie
-    time: col(DATE)
+      - Ventriculoperitoneal_Shunt
+      - col(Ventriculoperitoneal_Shunt)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  intubation_orotracheale:
+  Angioplasty:
     code:
-      - intubation_orotracheale
-    time: col(DATE)
+      - Angioplasty
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  traitement_AIC:
+  Orotracheal_Intubation:
     code:
-      - traitement_AIC
-    time: col(DATE)
+      - Orotracheal_Intubation
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  fievre:
+  Intracranial_Aneurysm_Treatment:
     code:
-      - fievre
-    time: col(DATE)
+      - Intracranial_Aneurysm_Treatment
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  PA_normal:
+  Fever:
     code:
-      - PA_normal
-    time: col(DATE)
+      - Fever
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  PA_eleve:
+  Normal_BP:
     code:
-      - PA_eleve
-    time: col(DATE)
+      - Normal_BP
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  PA_bas:
+  High_BP:
     code:
-      - PA_bas
-    time: col(DATE)
+      - High_BP
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  PA_O2_bas:
+  Low_BP:
     code:
-      - PA_O2_bas
-    time: col(DATE)
+      - Low_BP
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  NA_normal:
+  Low_Oxygen_BP:
     code:
-      - NA_normal
-    time: col(DATE)
+      - Low_Oxygen_BP
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  NA_eleve:
+  Normal_Sodium:
     code:
-      - NA_eleve
-    time: col(DATE)
+      - Normal_Sodium
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  NA_bas:
+  High_Sodium:
     code:
-      - NA_bas
-    time: col(DATE)
+      - High_Sodium
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  desaturation_O2:
+  Low_Sodium:
     code:
-      - desaturation_O2
-    time: col(DATE)
+      - Low_Sodium
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  anemie:
+  Oxygen_Desaturation:
     code:
-      - anemie
-    time: col(DATE)
+      - Oxygen_Desaturation
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  glucose_normale:
+  Anemia:
     code:
-      - glucose_normale
-    time: col(DATE)
+      - Anemia
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  glucose_eleve:
+  Normal_Glucose:
     code:
-      - glucose_eleve
-    time: col(DATE)
+      - Normal_Glucose
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  glucose_bas:
+  High_Glucose:
     code:
-      - glucose_bas
-    time: col(DATE)
+      - High_Glucose
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  cephale:
+  Low_Glucose:
     code:
-      - cephale
-      - col(cephale)
-    time: col(DATE)
+      - Low_Glucose
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  crise:
+  Headache:
     code:
-      - crise
-      - col(crise)
-    time: col(DATE)
+      - Headache
+      - col(Headache)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  GLASGOW_SEQ:
+  Seizure:
     code:
-      - GLASGOW_SEQ
-    time: col(DATE)
-    time_format: "%Y-%m-%d %H:%M:%S"
-    numeric_value: col(GLASGOW_SEQ)
-
-  vasospasme:
-    code:
-      - vasospasme
-      - col(vasospasme)
-    time: col(DATE)
+      - Seizure
+      - col(Seizure)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  hydrocephalie:
+  Glasgow_Coma_Scale_Temporal:
     code:
-      - hydrocephalie
-      - col(hydrocephalie)
-    time: col(DATE)
+      - Glasgow_Coma_Scale_Temporal
+    time: col(Timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(Glasgow_Coma_Scale_Temporal)
+
+  Vasospasm:
+    code:
+      - Vasospasm
+      - col(Vasospasm)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  DVE_txt:
+  Hydrocephalus:
     code:
-      - DVE_txt
-      - col(DVE_txt)
-    time: col(DATE)
+      - Hydrocephalus
+      - col(Hydrocephalus)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  cardiomyopathie_stress:
+  External_Ventricular_Drain_Details:
     code:
-      - cardiomyopathie_stress
-      - col(cardiomyopathie_stress)
-    time: col(DATE)
+      - External_Ventricular_Drain_Details
+      - col(External_Ventricular_Drain_Details)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  syndrome_perte_sel:
+  Stress_Cardiomyopathy:
     code:
-      - syndrome_perte_sel
-      - col(syndrome_perte_sel)
-    time: col(DATE)
+      - Stress_Cardiomyopathy
+      - col(Stress_Cardiomyopathy)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  hemorragie_intra_vent:
+  Cerebral_Salt_Wasting_Syndrome:
     code:
-      - hemorragie_intra_vent
-      - col(hemorragie_intra_vent)
-    time: col(DATE)
+      - Cerebral_Salt_Wasting_Syndrome
+      - col(Cerebral_Salt_Wasting_Syndrome)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  ischemie_cerebrale_retardee:
+  Intraventricular_Hemorrhage:
     code:
-      - ischemie_cerebrale_retardee
-      - col(ischemie_cerebrale_retardee)
-    time: col(DATE)
+      - Intraventricular_Hemorrhage
+      - col(Intraventricular_Hemorrhage)
+    time: col(Timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+  Delayed_Cerebral_Ischemia:
+    code:
+      - Delayed_Cerebral_Ischemia
+      - col(Delayed_Cerebral_Ischemia)
+    time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
