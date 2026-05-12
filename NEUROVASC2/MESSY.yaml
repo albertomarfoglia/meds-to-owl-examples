@@ -12,19 +12,56 @@ contextual:
       - Age
       - Years
     time: null
-    numeric_value: col(Age)
+    numeric_value: Age
 
-  Length_of_Stay:
-    code:
-      - Length_of_Stay
-    time: null
-    numeric_value: col(Length_of_Stay)
+# TODO restore the two variables
+  # Length_of_Stay:
+  #   code:
+  #     - Length_of_Stay
+  #   time: null
+  #   numeric_value: Length_of_Stay
+
+  # Number_of_Visited_Departments:
+  #   code:
+  #     - Number_of_Visited_Departments
+  #   time: null
+  #   numeric_value: Number_of_Visited_Departments
 
   Admission_Mode:
     code:
       - Admission_Mode
       - col(Admission_Mode)
     time: null
+
+  Intracranial_Aneurysm_Location:
+    code:
+      - Intracranial_Aneurysm_Location
+      - col(Intracranial_Aneurysm_Location)
+    time: null
+
+  Intracranial_Aneurysm_Treatment_Type:
+    code:
+      - Intracranial_Aneurysm_Treatment_Type
+      - col(Intracranial_Aneurysm_Treatment_Type)
+    time: null
+
+  Unstable_Intracranial_Aneurysm:
+    code:
+      - Unstable_Intracranial_Aneurysm
+      - col(Unstable_Intracranial_Aneurysm)
+    time: null
+
+  Visited_Units:
+    code:
+      - Visited_Units
+    time: null
+    text_value: Visited_Units
+
+  Visited_Departments:
+    code:
+      - Visited_Departments
+    time: null
+    text_value: Visited_Departments
 
   # Discharge_Mode:
   #   code:
@@ -67,12 +104,6 @@ contextual:
       - Visit_Type
       - col(Visit_Type)
     time: null
-
-  Number_of_Visited_Departments:
-    code:
-      - Number_of_Visited_Departments
-    time: null
-    numeric_value: col(Number_of_Visited_Departments)
 
   Hypertension:
     code:
@@ -198,29 +229,30 @@ contextual:
     code:
       - Fisher_Score
     time: null
-    numeric_value: col(Fisher_Score)
+    numeric_value: Fisher_Score
 
   WFNS_Score:
     code:
       - WFNS_Score
     time: null
-    numeric_value: col(WFNS_Score)
+    numeric_value: WFNS_Score
 
   Glasgow_Coma_Scale:
     code:
       - Glasgow_Coma_Scale
     time: null
-    numeric_value: col(Glasgow_Coma_Scale)
+    numeric_value: Glasgow_Coma_Scale
 
-sequential:
   Weight:
     code:
       - Weight
       - Kg
-    time: col(Timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
-    numeric_value: col(Weight)
+    time: null
+    numeric_value: Weight
+  #   #time: col(Timestamp)
+  #   #time_format: "%Y-%m-%d %H:%M:%S"
 
+sequential:
   Nimodipine:
     code:
       - Nimodipine
@@ -392,12 +424,12 @@ sequential:
     time: col(Timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-  Glasgow_Coma_Scale_Temporal:
-    code:
-      - Glasgow_Coma_Scale_Temporal
-    time: col(Timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
-    numeric_value: col(Glasgow_Coma_Scale_Temporal)
+  # Glasgow_Coma_Scale_Temporal:
+  #   code:
+  #     - Glasgow_Coma_Scale_Temporal
+  #   time: col(Timestamp)
+  #   time_format: "%Y-%m-%d %H:%M:%S"
+  #   numeric_value: col(Glasgow_Coma_Scale_Temporal)
 
   Vasospasm:
     code:

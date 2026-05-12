@@ -48,6 +48,8 @@ _SEMANTIC_MAP = {
         "Hypertension",
         "Diabetes",
         "Gout",
+        "Intracranial_Aneurysm_Location",
+        "Unstable_Intracranial_Aneurysm",
         # "Rehabilitation_Discharge",
     ],
 
@@ -85,6 +87,7 @@ _SEMANTIC_MAP = {
         "Angioplasty",
         "Orotracheal_Intubation",
         "Intracranial_Aneurysm_Treatment",
+        "Intracranial_Aneurysm_Treatment_Type"
     ],
 
     "Gender": ["Gender"],
@@ -131,9 +134,8 @@ TEMPLATES = {
 <http://nvasc/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/ProblemCondition> .
 <http://nvasc/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://nvasc/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
-<http://nvasc/$event_id> <http://sphn.org/hasRecordDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasCondition> <http://nvasc.org/$event_id> .
+$date_triple
 """
     ),
     "Procedure": Template(
@@ -141,9 +143,8 @@ TEMPLATES = {
 <http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Procedure> .
 <http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
-<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasProcedure> <http://nvasc.org/$event_id> .
+$date_triple
 """
     ),
     "DrugAdministration": Template(
@@ -151,9 +152,8 @@ TEMPLATES = {
 <http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/DrugAdministrationEvent> .
 <http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://nvasc.org/$event_id> <http://sphn.org/hasDrug> <http://nvasc.org/drug_$code> .
-<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasDrugAdministrationEvent> <http://nvasc.org/$event_id> .
+$date_triple
 """
     ),
     "MeasurementCode": Template(
@@ -161,9 +161,8 @@ TEMPLATES = {
 <http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Measurement> .
 <http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
-<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasMeasurement> <http://nvasc.org/$event_id> .
+$date_triple
 """
     ),
     "MeasurementNumeric": Template(
@@ -171,21 +170,19 @@ TEMPLATES = {
 <http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Measurement> .
 <http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
-<http://nvasc.org/$event_id> <http://sphn.org/hasStartDateTime> "$date"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
 <http://nvasc.org/$event_id> <http://sphn.org/hasResult> _:b$b1 .
 _:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/AssessmentResult> .
 _:b$b1 <http://sphn.org/hasQuantity> _:b$b2 .
 _:b$b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
 _:b$b2 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasMeasurement> <http://nvasc.org/$event_id> .
+$date_triple
 """
     ),
     "Gender": Template(
         """
 <http://nvasc.org/gender_$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/AdministrativeGender> .
 <http://nvasc.org/gender_$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasGender> <http://nvasc.org/gender_$event_id> .
 """
     ),
@@ -196,7 +193,6 @@ _:b$b2 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLS
 _:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
 _:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
 _:b$b1 <http://sphn.org/hasUnit> "years"^^<http://www.w3.org/2001/XMLSchema#string> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasAge> <http://nvasc.org/age_$event_id> .
 """
     ),
@@ -205,8 +201,8 @@ _:b$b1 <http://sphn.org/hasUnit> "years"^^<http://www.w3.org/2001/XMLSchema#stri
 <http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
 <http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
 <http://nvasc.org/$event_id> <http://sphn.org/hasCode> <http://nvasc.org/code_$code> .
-        
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasDiagnosis> <http://nvasc.org/$event_id> .
+$date_triple
     """
     ),
     "DiagnosisNumeric": Template(
@@ -216,8 +212,8 @@ _:b$b1 <http://sphn.org/hasUnit> "years"^^<http://www.w3.org/2001/XMLSchema#stri
 <http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
 _:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
 _:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
-
 <http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasDiagnosis> <http://nvasc.org/$event_id> .
+$date_triple
     """
     ),
 }
@@ -234,16 +230,31 @@ blank_node_counter = count()
 def new_bnode():
     return next(blank_node_counter)
 
+DATE_PREDICATES = {
+    "ProblemCondition": "hasRecordDateTime",
+    "Procedure": "hasStartDateTime",
+    "DrugAdministration": "hasStartDateTime",
+    "MeasurementCode": "hasStartDateTime",
+    "MeasurementNumeric": "hasStartDateTime",
+    "DiagnosisNumeric": "hasRecordDateTime",
+    "DiagnosisCode": "hasRecordDateTime",
+}
+
 def render_event(event: SemanticEvent):
 
     template = TEMPLATES[event.template_name]
 
+    date_triple = ""
+    if event.time and event.template_name in DATE_PREDICATES:
+        predicate = DATE_PREDICATES[event.template_name]
+        date_triple = f'''<http://nvasc.org/{event.event_id}> <http://sphn.org/{predicate}> "{event.time.isoformat()}"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'''
+
     return template.substitute(
         patient_id=event.patient_id,
         event_id=event.event_id,
-        code=event.code.replace("//", "_"),
+        code=event.code.replace("//", "_").replace(" ", "-"),
         label=event.label,
-        date=event.time.isoformat() if event.time else "",
+        date_triple=date_triple,
         numeric_value=event.numeric_value,
         unit=event.unit or "",
         b1=new_bnode(),

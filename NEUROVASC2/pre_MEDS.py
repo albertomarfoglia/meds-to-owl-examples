@@ -6,9 +6,20 @@ import numpy as np
 def generate_meds_preprocessed(
     df : pd.DataFrame,
     output_path: str | None = None,
-    outcome_path: str | None = None
+    outcome_path: str | None = None,
+    synthetic = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     _df = df.copy()
+
+    # TODO To remove at the end
+    if synthetic:
+        _df.drop(columns=[""], inplace=True)
+        CVARIABLES = [
+            x for x in CONTEXTUAL_VARIABLES
+            if x not in {"Length_of_Stay", "Number_of_Visited_Departments"}
+        ]
+    else:
+        CVARIABLES = CONTEXTUAL_VARIABLES
 
     pat_to_id = {k: v for v, k in enumerate(set(_df["Patient_ID"]), start=0)}
     _df["Patient_ID"] = _df["Patient_ID"].map(pat_to_id)
@@ -16,9 +27,9 @@ def generate_meds_preprocessed(
     _df = _df.set_index("INDEX")
     
     _df["Timestamp"] = pd.to_datetime(_df["Timestamp"], errors="coerce")
-    _df[SEQUENTIAL_VARIABLES] = _df[SEQUENTIAL_VARIABLES].replace(False, np.nan)
+    #_df[SEQUENTIAL_VARIABLES] = _df[SEQUENTIAL_VARIABLES].replace(False, np.nan)
 
-    df_patients = _df[KEY_VARIABLES + CONTEXTUAL_VARIABLES].drop_duplicates(subset='Patient_ID', keep='first')
+    df_patients = _df[KEY_VARIABLES + CVARIABLES].drop_duplicates(subset='Patient_ID', keep='first')
     df_patients = df_patients.sort_index()
 
     df_contextual = df_patients.drop(columns=["Outcome"])

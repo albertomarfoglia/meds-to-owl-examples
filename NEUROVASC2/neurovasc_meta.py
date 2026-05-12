@@ -42,6 +42,10 @@ CONTEXTUAL_VARIABLES = [
     "Gout",
     "Glasgow_Coma_Scale",
     "Outcome",
+    "Weight",
+    "Intracranial_Aneurysm_Location",
+    "Intracranial_Aneurysm_Treatment_Type",
+    "Unstable_Intracranial_Aneurysm",
 ] + HOSPITAL_STAY_VARIABLES + PATIENT_VARIABLES
 
 
@@ -53,7 +57,6 @@ SEQUENTIAL_VARIABLES = [
     "Vasospasm",
     "Hydrocephalus",
     "External_Ventricular_Drain_Details",
-    "Intraventricular_Hemorrhage",
     "Delayed_Cerebral_Ischemia",
     "Low_Glucose",
     "High_Glucose",
@@ -63,8 +66,8 @@ SEQUENTIAL_VARIABLES = [
     "High_BP",
     "Normal_BP",
     "Fever",
-    "Weight",
-    "Glasgow_Coma_Scale_Temporal",
+    #"Weight_Temporal",
+    #"Glasgow_Coma_Scale_Temporal",
     "Nimodipine",
     "Paracetamol",
     "Norepinephrine",
@@ -78,6 +81,7 @@ SEQUENTIAL_VARIABLES = [
     "Angioplasty",
     "Orotracheal_Intubation",
     "Intracranial_Aneurysm_Treatment",
+    "Intraventricular_Hemorrhage",
     "Normal_Sodium",
     "High_Sodium",
     "Low_Sodium",
