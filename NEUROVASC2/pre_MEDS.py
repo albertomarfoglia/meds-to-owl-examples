@@ -1,7 +1,7 @@
 import pandas as pd
 import joblib
 from .neurovasc_meta import CONTEXTUAL_VARIABLES, SEQUENTIAL_VARIABLES, KEY_VARIABLES
-import numpy as np
+import polars as pl
 
 def generate_meds_preprocessed(
     df : pd.DataFrame,
@@ -50,3 +50,92 @@ def generate_meds_preprocessed(
         joblib.dump(df_outcomes.to_list(), outcome_path)
 
     return (df_contextual, df_sequential, df_outcomes)
+
+
+
+def rebalance_synth(df_input: pl.DataFrame, n_patients = 5000):
+    # ----------------------------
+    # Step 1: Build patient-level table
+    # (assumes each patient has a single Outcome)
+    # ----------------------------
+    patient_df = (
+        df_input
+        .group_by("Patient_ID")
+        .agg(
+            pl.col("Outcome").first().alias("Outcome")
+        )
+    )
+
+    # ----------------------------
+    # Step 2: Define target distribution
+    # ----------------------------
+    target_n = n_patients
+
+    target_dist = {
+        "DECES": 0.141,
+        "REEDUC_TRANSFERT": 0.386,
+        "DOMICILE": 0.473,
+    }
+
+    target_counts = {
+        k: int(v * target_n)
+        for k, v in target_dist.items()
+    }
+
+    # fix rounding error
+    diff = target_n - sum(target_counts.values())
+    target_counts["DOMICILE"] += diff
+
+    # ----------------------------
+    # Step 3: Check availability (important safeguard)
+    # ----------------------------
+    available = (
+        patient_df
+        .group_by("Outcome")
+        .len()
+    )
+
+    available_dict = dict(zip(available["Outcome"], available["len"]))
+
+    for k, v in target_counts.items():
+        if v > available_dict.get(k, 0):
+            raise ValueError(
+                f"Not enough patients in class {k}: "
+                f"requested {v}, available {available_dict.get(k, 0)}"
+            )
+
+    # ----------------------------
+    # Step 4: Stratified sampling at patient level
+    # ----------------------------
+    sampled_patients = pl.concat([
+        patient_df.filter(pl.col("Outcome") == outcome)
+        .sample(n=n, seed=42)
+        for outcome, n in target_counts.items()
+    ])
+
+    # ----------------------------
+    # Step 5: Map back to full dataset
+    # ----------------------------
+    df_sampled = (
+        df_input
+        .join(sampled_patients.select("Patient_ID"),
+            on="Patient_ID",
+            how="inner")
+    )
+
+    # ----------------------------
+    # Optional sanity check
+    # ----------------------------
+    print(
+        df_sampled
+        .group_by("Patient_ID")
+        .first()
+        .group_by("Outcome")
+        .len()
+        .sort("Outcome")
+    )
+
+    print("Number of patients:", sampled_patients.height)
+    print("Number of rows:", df_sampled.height)
+
+    return df_sampled
