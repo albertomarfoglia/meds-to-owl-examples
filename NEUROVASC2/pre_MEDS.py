@@ -13,7 +13,7 @@ def generate_meds_preprocessed(
 
     # TODO To remove at the end
     if synthetic:
-        _df.drop(columns=[""], inplace=True)
+        #_df.drop(columns=[""], inplace=True)
         CVARIABLES = [
             x for x in CONTEXTUAL_VARIABLES
             if x not in {"Length_of_Stay", "Number_of_Visited_Departments"}
