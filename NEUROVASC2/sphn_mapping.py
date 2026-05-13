@@ -50,6 +50,7 @@ _SEMANTIC_MAP = {
         "Gout",
         "Intracranial_Aneurysm_Location",
         "Unstable_Intracranial_Aneurysm",
+        "External_Ventricular_Drain_Details",
         # "Rehabilitation_Discharge",
     ],
 
@@ -59,6 +60,7 @@ _SEMANTIC_MAP = {
         "Glasgow_Coma_Scale",
         "Fisher_Score",
         "WFNS_Score",
+        "Weight",
     ],
 
     "ProblemCondition": [
@@ -112,10 +114,10 @@ _SEMANTIC_MAP = {
         "Anemia",
     ],
 
-    "MeasurementNumeric": [
-        "Glasgow_Coma_Scale_Temporal",
-        "Weight",
-    ],
+    # "MeasurementNumeric": [
+    #     "Glasgow_Coma_Scale_Temporal",
+    #     "Weight",
+    # ],
 }
 
 SEMANTIC_MAP = {value: key for key, values in _SEMANTIC_MAP.items() for value in values}

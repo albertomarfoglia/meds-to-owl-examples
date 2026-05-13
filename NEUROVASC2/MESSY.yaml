@@ -14,18 +14,17 @@ contextual:
     time: null
     numeric_value: Age
 
-# TODO restore the two variables
-  # Length_of_Stay:
-  #   code:
-  #     - Length_of_Stay
-  #   time: null
-  #   numeric_value: Length_of_Stay
+  Length_of_Stay:
+    code:
+      - Length_of_Stay
+    time: null
+    numeric_value: Length_of_Stay
 
-  # Number_of_Visited_Departments:
-  #   code:
-  #     - Number_of_Visited_Departments
-  #   time: null
-  #   numeric_value: Number_of_Visited_Departments
+  Number_of_Visited_Departments:
+    code:
+      - Number_of_Visited_Departments
+    time: null
+    numeric_value: Number_of_Visited_Departments
 
   Admission_Mode:
     code:
@@ -51,17 +50,17 @@ contextual:
       - col(Unstable_Intracranial_Aneurysm)
     time: null
 
-  Visited_Units:
-    code:
-      - Visited_Units
-    time: null
-    text_value: Visited_Units
+  # Visited_Units:
+  #   code:
+  #     - Visited_Units
+  #   time: null
+  #   text_value: Visited_Units
 
-  Visited_Departments:
-    code:
-      - Visited_Departments
-    time: null
-    text_value: Visited_Departments
+  # Visited_Departments:
+  #   code:
+  #     - Visited_Departments
+  #   time: null
+  #   text_value: Visited_Departments
 
   # Discharge_Mode:
   #   code:
