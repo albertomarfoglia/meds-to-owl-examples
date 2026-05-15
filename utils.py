@@ -3,6 +3,7 @@ import re
 import pandas as pd
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
@@ -12,6 +13,7 @@ from sklearn.metrics import (
     roc_auc_score,
     average_precision_score,
 )
+
 
 def build_features(df: pl.DataFrame) -> pl.DataFrame:
 
@@ -108,9 +110,7 @@ def build_features(df: pl.DataFrame) -> pl.DataFrame:
         else:
             final_df = final_df.join(d, on="subject_id", how="full", coalesce=True)
 
-    return final_df
-
-
+    return final_df # type: ignore
 
 
 # ------------------------ Metrics ------------------------ #
@@ -180,6 +180,7 @@ def save_confusion_matrix(y_true, y_pred, result_path, labels=None):
     disp = ConfusionMatrixDisplay(cm, display_labels=labels)
     fig = disp.plot().figure_
     fig.savefig(result_path, dpi=600)
+    plt.close(fig)
 
 
 def mean_std_metrics(
@@ -205,12 +206,10 @@ def mean_std_metrics(
                 metrics_std.loc["WEIGHTED", "ACCURACY"],
             ),
             mean_std_str(
-                metrics_mean.loc["WEIGHTED", "AUC"],
-                metrics_std.loc["WEIGHTED", "AUC"]
+                metrics_mean.loc["WEIGHTED", "AUC"], metrics_std.loc["WEIGHTED", "AUC"]
             ),
             mean_std_str(
-                metrics_mean.loc["WEIGHTED", "AP"],
-                metrics_std.loc["WEIGHTED", "AP"]
+                metrics_mean.loc["WEIGHTED", "AP"], metrics_std.loc["WEIGHTED", "AP"]
             ),
         ]
     )
@@ -320,7 +319,18 @@ def _multiclass_metrics(metrics: dict, classes: list[str]):
 
 
 # ------------------------ Evaluation ------------------------ #
-def evaluate_multiclass_model(model, x_val, y_val, val_idx, fold, result_dir, data_model, classes, num_patients, time_opt):
+def evaluate_multiclass_model(
+    model,
+    x_val,
+    y_val,
+    val_idx,
+    fold,
+    result_dir,
+    data_model,
+    classes,
+    num_patients,
+    time_opt,
+):
     y_prob = model.predict_proba(x_val)
     y_pred = y_prob.argmax(axis=1)
 
@@ -354,3 +364,166 @@ def evaluate_multiclass_model(model, x_val, y_val, val_idx, fold, result_dir, da
     np.save(f"{y_folder}/y_prob.npy", y_prob)
 
     return metric_df
+
+def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
+    import polars as pl
+    import pandas as pd
+    import numpy as np
+    from utils import build_features, evaluate_multiclass_model, mean_std_metrics
+    from sklearn.model_selection import StratifiedKFold
+    from xgboost import XGBClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    import joblib
+    from sklearn.pipeline import Pipeline
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.neural_network import MLPClassifier
+
+    ROOT = meds_root
+
+    df = build_features(pl.read_parquet(f"{ROOT}/data/**/0.parquet"))
+    X = df.sort("subject_id").to_pandas().select_dtypes(exclude=["datetime64[ns]"])
+    X = pd.get_dummies(X).drop(columns=["subject_id"])
+    y = np.array(
+        joblib.load(outcomes_path)
+    )
+
+    NUM_PATIENTS = len(y)
+    CLASSES = classes
+
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+    models = {
+        "xgboost": XGBClassifier(
+            n_estimators=400,
+            max_depth=6,
+            learning_rate=0.05,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            n_jobs=-1,
+            objective="multi:softprob",
+            num_class=3,
+            eval_metric="mlogloss",
+            # feature_names=feature_names,
+        ),
+        "rf": RandomForestClassifier(
+            n_estimators=500,
+            max_depth=10,
+            random_state=42,
+            n_jobs=-1,
+        ),
+        "lr": Pipeline(
+            [
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+                (
+                    "classifier",
+                    LogisticRegression(
+                        # multi_class="multinomial",
+                        solver="lbfgs",
+                        max_iter=5000,
+                        class_weight="balanced",
+                        random_state=42,
+                        n_jobs=-1,
+                    ),
+                ),
+            ]
+        ),
+        "mlp": Pipeline(
+            [
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+                (
+                    "classifier",
+                    MLPClassifier(
+                        hidden_layer_sizes=(256, 128),
+                        activation="relu",
+                        solver="adam",
+                        alpha=1e-4,
+                        batch_size=32,
+                        learning_rate_init=1e-3,
+                        max_iter=500,
+                        early_stopping=True,
+                        validation_fraction=0.1,
+                        n_iter_no_change=20,
+                        random_state=42,
+                        verbose=False,
+                    ),
+                ),
+            ]
+        ),
+    }
+
+    best_score = -np.inf
+    best_fold = None
+    best_model = None
+
+    for model_name, model in models.items():
+        RESULTS = f"{result_dir}/{model_name}"
+
+        os.makedirs(RESULTS, exist_ok=True)
+        os.makedirs(f"{RESULTS}/cm", exist_ok=True)
+        os.makedirs(f"{RESULTS}/models", exist_ok=True)
+
+        all_metrics = []
+
+        for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
+            x_train = X.iloc[train_idx]
+            x_val = X.iloc[val_idx]
+
+            y_train = y[train_idx]
+            y_val = y[val_idx]
+
+            model.fit(x_train, y_train)
+
+            metric = evaluate_multiclass_model(
+                model,
+                x_val,
+                y_val,
+                val_idx,
+                fold,
+                result_dir=RESULTS,
+                data_model=model_name,
+                classes=CLASSES,
+                num_patients=NUM_PATIENTS,
+                time_opt="TS",
+            )
+
+            all_metrics.append(metric)
+
+            current_score = metric.loc["MACRO", "AUC"]
+
+            if current_score > best_score: # type: ignore
+                best_score = current_score
+                best_fold = fold
+                best_model = model
+
+        model_path = (
+            f"{RESULTS}/models/"
+            f"{model_name}_best_fold{best_fold}_auc_{best_score:.4f}.joblib"
+        )
+
+        joblib.dump(best_model, model_path)
+
+        print(
+            f"Saved best {model_name} model (fold={best_fold}, macro_auc={best_score:.4f})"
+        )
+
+        panel = pd.concat(all_metrics)
+        metrics_mean = panel.groupby(level=0).mean()
+        metrics_mean.index.name = "MEAN"
+        metrics_std = panel.groupby(level=0).std()
+        metrics_std.index.name = "STD"
+
+        mean_std_metrics(metrics_mean, metrics_std, CLASSES).to_csv(
+            f"{RESULTS}/metrics_TS_{NUM_PATIENTS}_mean_std.csv",
+            sep="\t",
+            index=False,
+            mode="a",
+        )
+        metrics_mean.to_csv(f"{RESULTS}/metrics_TS_{NUM_PATIENTS}.csv", mode="a")
+        metrics_std.to_csv(f"{RESULTS}/metrics_TS_{NUM_PATIENTS}.csv", mode="a")
+
+    return X, y

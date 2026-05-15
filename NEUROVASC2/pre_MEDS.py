@@ -4,12 +4,12 @@ from .neurovasc_meta import CONTEXTUAL_VARIABLES, SEQUENTIAL_VARIABLES, KEY_VARI
 import polars as pl
 
 def generate_meds_preprocessed(
-    df : pd.DataFrame,
+    df : pl.DataFrame,
     output_path: str | None = None,
     outcome_path: str | None = None,
     synthetic = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    _df = df.copy()
+    _df = df.to_pandas().copy()
 
     # TODO To remove at the end
     if synthetic:
@@ -49,7 +49,7 @@ def generate_meds_preprocessed(
     if outcome_path:
         joblib.dump(df_outcomes.to_list(), outcome_path)
 
-    return (df_contextual, df_sequential, df_outcomes)
+    return (df_contextual, df_sequential, df_outcomes) # type: ignore
 
 
 
