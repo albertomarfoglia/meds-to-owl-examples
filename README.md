@@ -20,23 +20,34 @@ The repository currently includes two dataset conversions:
 meds-to-owl-examples
 ├── LICENSE
 ├── README.md
-├── requirements.txt                # Python dependencies
-├── main.ipynb                      # Notebook demonstrating the full End-to-End conversion workflow
-│
-├── NEUROVASC
-│   ├── MESSY.yaml                  # Configuration file for the MEDS-extract pipeline
-|   |── pre_MEDS
-│   |   └── neurovasc_codes.csv     # Preprocessed code mappings
-│   └── utils
-│       ├── metrics.py
-│       ├── neurovasc_meta.py
-│       ├── pre_MEDS.py             # Preprocessing scripts for MEDS-extract
-│       ├── queries.py
-│       ├── synthetic_generator.py  # Scripts to generate synthetic neurovasc data
-│       └── transformers.py
+├── requirements.txt            # Install by `pip install -r`
 │
 ├── MIMIC
-│   └── run.sh                      # Script to prepare MIMIC-IV Demo MEDS dataset
+│   ├── experiments.yaml        # Experiment configuration
+│   ├── main.ipynb              # End-to-end MIMIC pipeline notebook
+│   ├── run_aces.sh             # ACEs pipeline for cohorts generation
+│   ├── run_meds_etl.sh         # MEDS extraction / ETL pipeline
+│   │
+│   ├── tasks                   # Predictive tasks definitions (YAML)
+│   │   ├── first_24_in_icu_mortality.yaml
+│   │   ├── first_48_in_hospital_los.yaml
+│   │   ├── readmission_30d.yaml
+│   │   ├── post_hospital_discharge_mortality_30d.yaml
+│   │   └── ... (additional ICU/hospital outcome tasks)
+│   │
+│   └── utils
+│
+├── NEUROVASC
+│   ├── MESSY.yaml              # MEDS-extract mapping template
+│   ├── main.ipynb              # Neurovascular pipeline notebook
+│   ├── pre_MEDS
+│   │   └── neurovasc_codes.csv # Ontologies codes imported during meds conversion
+│   └── utils
+│
+├── NEUROVASC2
+    ├── MESSY.yaml              # UMEDS-extract mapping template
+    ├── main.ipynb              # Neurovascular pipeline notebook
+    └── utils
 ```
 
 ## Installation
