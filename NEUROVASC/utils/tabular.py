@@ -374,7 +374,7 @@ def evaluate_multiclass_model(
 
     return metric_df
 
-def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
+def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_model = False):
     ROOT = meds_root
 
     df = build_features(pl.read_parquet(f"{ROOT}/data/**/0.parquet"))
@@ -398,6 +398,9 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
             colsample_bytree=0.8,
             random_state=42,
             n_jobs=-1,
+            tree_method="gpu_hist",
+            predictor="gpu_predictor",
+            device="cuda",
             objective="multi:softprob",
             num_class=len(classes),
             eval_metric="mlogloss",
@@ -464,7 +467,10 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
 
         all_metrics = []
 
+        GPU_IDS = [0, 1, 2, 3]
+
         for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_IDS[fold % 4])
             x_train = X.iloc[train_idx]
             x_val = X.iloc[val_idx]
 
@@ -495,16 +501,17 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
                 best_fold = fold
                 best_model = model
 
-        model_path = (
-            f"{RESULTS}/models/"
-            f"{model_name}_best_fold{best_fold}_auc_{best_score:.4f}.joblib"
-        )
+        if save_model:
+            model_path = (
+                f"{RESULTS}/models/"
+                f"{model_name}_best_fold{best_fold}_auc_{best_score:.4f}.joblib"
+            )
 
-        joblib.dump(best_model, model_path)
+            joblib.dump(best_model, model_path)
 
-        print(
-            f"Saved best {model_name} model (fold={best_fold}, macro_auc={best_score:.4f})"
-        )
+            print(
+                f"Saved best {model_name} model (fold={best_fold}, macro_auc={best_score:.4f})"
+            )
 
         panel = pd.concat(all_metrics)
         metrics_mean = panel.groupby(level=0).mean()

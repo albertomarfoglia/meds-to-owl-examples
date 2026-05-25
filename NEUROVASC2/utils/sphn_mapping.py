@@ -25,7 +25,6 @@ _SEMANTIC_MAP = {
         # "Discharge_Mode",
         "Visit_Type",
         "Admission_Unit",
-        "Admission_Department",
         # "Discharge_Unit",
         # "Discharge_Department",
         "Emergency_Admission",
@@ -51,16 +50,24 @@ _SEMANTIC_MAP = {
         "Intracranial_Aneurysm_Location",
         "Unstable_Intracranial_Aneurysm",
         "External_Ventricular_Drain_Details",
+        "Admission_Department"
         # "Rehabilitation_Discharge",
     ],
 
+    "A": ["Number_of_Visited_Departments"],
+    "B": ["Length_of_Stay"],
+    "C": ["Glasgow_Coma_Scale"],
+    "D": ["WFNS_Score"],
+    "E": ["Fisher_Score"],
+
+
     "DiagnosisNumeric": [
-        "Number_of_Visited_Departments",
-        "Length_of_Stay",
-        "Glasgow_Coma_Scale",
-        "Fisher_Score",
-        "WFNS_Score",
         "Weight",
+        # "Glasgow_Coma_Scale",
+        # "WFNS_Score",
+        # "Fisher_Score",
+        # "Number_of_Visited_Departments"
+        # "Length_of_Stay"
     ],
 
     "ProblemCondition": [
@@ -75,11 +82,11 @@ _SEMANTIC_MAP = {
     "DrugAdministration": [
         "Nimodipine",
         "Paracetamol",
-        "Norepinephrine",
         "Milrinone",
         "Morphine",
         "Antiepileptic_Treatment",
         "Antiepileptic_Treatment_SAH",
+        "Norepinephrine"
     ],
 
     "Procedure": [
@@ -131,6 +138,56 @@ PREFIX = """
 """
 
 TEMPLATES = {
+        "A": Template("""
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasA> <http://nvasc.org/$event_id> .
+$date_triple
+"""),
+
+        "B": Template("""
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasB> <http://nvasc.org/$event_id> .
+$date_triple
+"""),
+
+"C": Template("""
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasC> <http://nvasc.org/$event_id> .
+$date_triple
+"""),
+
+"D": Template("""
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasD> <http://nvasc.org/$event_id> .
+$date_triple
+"""),
+
+"E": Template("""
+<http://nvasc.org/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Diagnosis> .
+<http://nvasc.org/$event_id> <http://www.w3.org/2000/01/rdf-schema/label> "$label"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://nvasc.org/$event_id> <http://sphn.org/hasQuantity> _:b$b1 .
+_:b$b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/Quantity> .
+_:b$b1 <http://sphn.org/hasValue> "$numeric_value"^^<http://www.w3.org/2001/XMLSchema#float> .
+<http://nvasc.org/synth_patient_$patient_id> <http://nvasc.org/hasE> <http://nvasc.org/$event_id> .
+$date_triple
+"""),
+
     "ProblemCondition": Template(
         """
 <http://nvasc/$event_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://sphn.org/ProblemCondition> .
@@ -279,3 +336,56 @@ def parse_code(code: str):
         variable, value = code, None
 
     return variable, value
+
+
+def build_rdf_event(row) -> str | None:
+    subject_id, code, time, numeric_value = row
+
+    variable, value = parse_code(code)
+
+    if variable not in SEMANTIC_MAP:
+        return None
+
+    meta = SEMANTIC_MAP[variable]
+
+    event = SemanticEvent(
+        patient_id=subject_id,
+        variable=variable,
+        numeric_value=numeric_value,
+        time=time,
+        template_name=meta,
+        code=code,
+        label=variable,
+        event_id=make_id(subject_id, variable, time, value, numeric_value),
+    )
+
+    return render_event(event)
+
+class NTBatchWriter:
+    def __init__(self, output_folder: str, rows_per_file: int):
+        self.output_folder = output_folder
+        self.rows_per_file = rows_per_file
+
+        self.file_index = 0
+        self.rows_in_file = 0
+
+        self.f = self._open_new_file()
+
+    def _open_new_file(self):
+        return open(
+            f"{self.output_folder}/part_{self.file_index:03d}.nt",
+            "w"
+        )
+
+    def write(self, line: str):
+        if self.rows_in_file >= self.rows_per_file:
+            self.f.close()
+            self.file_index += 1
+            self.rows_in_file = 0
+            self.f = self._open_new_file()
+
+        self.f.write(line)
+        self.rows_in_file += 1
+
+    def close(self):
+        self.f.close()

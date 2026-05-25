@@ -2,24 +2,15 @@ import pandas as pd
 import joblib
 from .neurovasc_meta import CONTEXTUAL_VARIABLES, SEQUENTIAL_VARIABLES, KEY_VARIABLES
 import polars as pl
+import numpy as np
+from datetime import datetime, timedelta
 
 def generate_meds_preprocessed(
     df : pl.DataFrame,
     output_path: str | None = None,
     outcome_path: str | None = None,
-    synthetic = False,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     _df = df.to_pandas().copy()
-
-    # TODO To remove at the end
-    if synthetic:
-        #_df.drop(columns=[""], inplace=True)
-        CVARIABLES = [
-            x for x in CONTEXTUAL_VARIABLES
-            if x not in {"Length_of_Stay", "Number_of_Visited_Departments"}
-        ]
-    else:
-        CVARIABLES = CONTEXTUAL_VARIABLES
 
     pat_to_id = {k: v for v, k in enumerate(set(_df["Patient_ID"]), start=0)}
     _df["Patient_ID"] = _df["Patient_ID"].map(pat_to_id)
@@ -29,7 +20,7 @@ def generate_meds_preprocessed(
     _df["Timestamp"] = pd.to_datetime(_df["Timestamp"], errors="coerce")
     #_df[SEQUENTIAL_VARIABLES] = _df[SEQUENTIAL_VARIABLES].replace(False, np.nan)
 
-    df_patients = _df[KEY_VARIABLES + CVARIABLES].drop_duplicates(subset='Patient_ID', keep='first')
+    df_patients = _df[KEY_VARIABLES + CONTEXTUAL_VARIABLES].drop_duplicates(subset='Patient_ID', keep='first')
     df_patients = df_patients.sort_index()
 
     df_contextual = df_patients.drop(columns=["Outcome"])
@@ -139,3 +130,44 @@ def rebalance_synth(df_input: pl.DataFrame, n_patients = 5000):
     print("Number of rows:", df_sampled.height)
 
     return df_sampled
+
+def generate_patient_timestamps(
+    df: pl.DataFrame,
+    id_col: str = "Patient_ID",
+    time_col: str = "Relative_Time",
+    output_col: str = "Timestamp",
+    start_min: datetime = datetime(2020, 1, 1),
+    start_max: datetime = datetime(2023, 1, 1),
+    seed: int | None = None,
+) -> pl.DataFrame:
+    """
+    Assigns a random base timestamp per patient and computes absolute timestamps.
+    """
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    delta_days = (start_max - start_min).days
+
+    def random_date():
+        return start_min + timedelta(days=np.random.randint(delta_days))
+
+    base_dates = (
+        df.select(id_col)
+        .unique()
+        .with_columns(
+            pl.col(id_col)
+            .map_elements(lambda _: random_date())
+            .alias("base_ts")
+        )
+    )
+
+    return (
+        df.join(base_dates, on=id_col)
+        .with_columns(
+            (
+                pl.col("base_ts") + pl.duration(days=pl.col(time_col))
+            ).alias(output_col)
+        )
+        .drop("base_ts")
+    )

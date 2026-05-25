@@ -374,7 +374,7 @@ def evaluate_multiclass_model(
 
     return metric_df
 
-def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
+def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_model = False):
     ROOT = meds_root
 
     df = build_features(pl.read_parquet(f"{ROOT}/data/**/0.parquet"))
@@ -495,16 +495,17 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir):
                 best_fold = fold
                 best_model = model
 
-        model_path = (
-            f"{RESULTS}/models/"
-            f"{model_name}_best_fold{best_fold}_auc_{best_score:.4f}.joblib"
-        )
+        if save_model:
+            model_path = (
+                f"{RESULTS}/models/"
+                f"{model_name}_best_fold{best_fold}_auc_{best_score:.4f}.joblib"
+            )
 
-        joblib.dump(best_model, model_path)
+            joblib.dump(best_model, model_path)
 
-        print(
-            f"Saved best {model_name} model (fold={best_fold}, macro_auc={best_score:.4f})"
-        )
+            print(
+                f"Saved best {model_name} model (fold={best_fold}, macro_auc={best_score:.4f})"
+            )
 
         panel = pd.concat(all_metrics)
         metrics_mean = panel.groupby(level=0).mean()

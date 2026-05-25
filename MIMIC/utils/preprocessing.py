@@ -109,6 +109,21 @@ regenerate_ids = (
     .alias("subject_id")
 )
 
+
+def parse_blood_pressure_values(df: pl.LazyFrame):
+    return (
+        df.with_columns(parsed=parse_txt_to_float)
+        .with_columns(swap_text_with_numeric)
+        .with_columns(orig_code=pl.col("code"), orig_text=pl.col("text_value"))
+        .with_columns(bp_values=bp_values_list)
+        .explode("bp_values")
+        .with_columns(numeric_value=pl.col("bp_values"))
+        .with_columns(code=to_systolic_and_dyastolic_pressure)
+        .with_columns(text_value=set_BP_values_text_to_null)
+        .drop(derived_columns)
+    )
+
+
 # no_vitals = ~pl.col("code").str.contains_any(vitals)
 
 is_bp = pl.col("code") == "Blood Pressure"
@@ -157,6 +172,23 @@ set_BP_values_text_to_null = (
 
 derived_columns = ["bp_values", "orig_code", "orig_text", "parsed"]
 
+meds_core_columns = [
+    "subject_id",
+    "code",
+    "time",
+    "numeric_value",
+    "prediction_time",
+    "boolean_value",
+]
+
+
+def filter_by_treshold(df: pl.LazyFrame, threshold: float):
+    valid_codes = (
+        df.group_by("code").len().filter(pl.col("len") > threshold).select("code")
+    )
+
+    return df.join(valid_codes, on="code", how="inner")
+
 
 def extract_labels_array(outcomes: pl.DataFrame):
     labels = (
@@ -175,12 +207,12 @@ window_dict = {
     "24h": pl.col("time").is_null()
     | (
         (pl.col("time") >= (pl.col("prediction_time") - pl.duration(days=1)))
-        & (pl.col("time") <= pl.col("prediction_time"))
+        & (pl.col("time") < pl.col("prediction_time"))
     ),
     "48h": pl.col("time").is_null()
     | (
         (pl.col("time") >= (pl.col("prediction_time") - pl.duration(days=2)))
-        & (pl.col("time") <= pl.col("prediction_time"))
+        & (pl.col("time") < pl.col("prediction_time"))
     ),
     "full": pl.col("time").is_null() | (pl.col("time") <= pl.col("prediction_time")),
 }
@@ -199,37 +231,35 @@ def process_codes(input_parquet: str, output_dir: str, prefix_map: dict):
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
     # Load Parquet lazily
-    df = pl.scan_parquet(input_parquet).select(["parent_codes"])
+    df = (
+        pl.scan_parquet(input_parquet)
+        .with_columns(pl.col("parent_codes").cast(pl.List(pl.String)))
+        .explode("parent_codes")
+    )
 
     for name, prefix in prefix_map.items():
         print(f"Processing {name}...")
 
-        # Lazy filter: keep lists that contain at least one code with prefix
         codes = (
-            df.explode("parent_codes")
-            .filter(pl.col("parent_codes").str.starts_with(prefix))
-            .select(
-                [
-                    pl.col("parent_codes")
-                    .str.replace(prefix, "", literal=True)
-                    .alias("code")
-                ]
+            df.filter(pl.col("parent_codes").str.starts_with(prefix))
+            .with_columns(
+                pl.col("parent_codes")
+                .str.replace(f"{prefix}", "")
+                .alias("parent_codes")
             )
+            .collect()
+            .select("parent_codes")
         )
 
-        # Collect to memory and save as .npy
-        codes_array = codes.collect()["code"].to_numpy()
-        if len(codes_array) > 0:
-            np.save(output_dir_path / f"{name}_codes.npy", codes_array)
-            print(
-                f"Saved {len(codes_array)} codes for {name} → {(name + '_codes.npy')}"
-            )
+        if len(codes) > 0:
+            codes.write_parquet(output_dir_path / f"{name}_codes.parquet")
+            print(f"Saved {len(codes)} codes for {name} → {(name + '_codes.parquet')}")
 
 
 PREFIX_MAP = {
     "ICD10PCS": "ICD10PCS/",
     "ICD10CM": "ICD10CM/",
-    "LOINC": "LNC/",
+    "LOINC": "LOINC/",
     "RXNORM": "RXNORM/",
     "ICD9CM": "ICD9CM/",
     "SNOMED": "SNOMED/",
@@ -258,13 +288,13 @@ def aggregate_events(events: pl.LazyFrame, agg: str = "6h"):
         .agg(
             [
                 pl.col("numeric_value").mean().alias("numeric_value"),
-                #pl.col("text_value").first().alias("text_value"),
+                # pl.col("text_value").first().alias("text_value"),
                 pl.col("prediction_time").first().alias("prediction_time"),
                 pl.col("boolean_value").first().alias("boolean_value"),
             ]
         )
-        .sort(["subject_id", "time"])
     )
+
 
 def split_events(dt: pl.DataFrame):
     subjects = (
@@ -307,13 +337,15 @@ def create_meds_cohort(
     output_dir: str,
     columns: list[str] = ["subject_id", "code", "time", "numeric_value", "text_value"],
 ):
-    (split_s, split_e, split_l) = split_events(events)
+    split_s, split_e, split_l = split_events(events)
 
     split_s.write_parquet(f"{output_dir}/metadata/subject_splits.parquet")
 
-    shutil.copy(
-        f"{orig_dir}/metadata/codes.parquet", f"{output_dir}/metadata/codes.parquet"
-    )
+    filtered_codes = events.select("code").unique()
+    pl.read_parquet(f"{orig_dir}/metadata/codes.parquet").join(
+        filtered_codes, on="code", how="inner"
+    ).write_parquet(f"{output_dir}/metadata/codes.parquet")
+
     shutil.copy(
         f"{orig_dir}/metadata/dataset.json", f"{output_dir}/metadata/dataset.json"
     )

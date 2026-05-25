@@ -4,20 +4,21 @@
 set -e
 
 # Default output directory
-OUTPUT_DIR="${1:-MIMIC}"
+OUTPUT_DIR="${1:-.}"
+DATASET_USERNAME="${2:-}"
+DATASET_PASSWORD="${3:-}"
+DO_DOWNLOAD="${4:-False}"
 
 # Create virtual environment if it doesn't exist
-if [ ! -d ".venv_mimic" ]; then
-    python3 -m venv .venv_mimic
-fi
+# if [ ! -d ".venv_meds_mimic" ]; then
+#     conda create -y -n venv_meds_mimic python=3.11
+#     conda activate venv_meds_mimic
+# fi
 
-export DATASET_DOWNLOAD_USERNAME=""
-export DATASET_DOWNLOAD_PASSWORD=""
+export DATASET_DOWNLOAD_USERNAME="${DATASET_USERNAME}"
+export DATASET_DOWNLOAD_PASSWORD="${DATASET_PASSWORD}"
 export HYDRA_FULL_ERROR=1
-export N_WORKERS=1
-
-# Activate virtual environment
-source .venv_mimic/bin/activate
+export N_WORKERS=6
 
 # Upgrade pip (optional but recommended)
 pip install --upgrade pip
@@ -33,9 +34,9 @@ mkdir -p "${OUTPUT_DIR}"
 # Run MEDS extraction
 MEDS_extract-MIMIC_IV \
     root_output_dir="${OUTPUT_DIR}" \
-    do_download=False \
-    do_overwrite=True
-
-#    do_copy=True \
+    do_download="${DO_DOWNLOAD}"
+    #download_workers="8" \
+    #do_overwrite=False \
+    #do_copy=True \
 
 echo "Extraction completed. Output saved to '${OUTPUT_DIR}'"
