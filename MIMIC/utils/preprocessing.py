@@ -238,8 +238,7 @@ def process_codes(input_parquet: str, output_dir: str, prefix_map: dict):
     )
 
     for name, prefix in prefix_map.items():
-        print(f"Processing {name}...")
-
+        #print(f"Processing {name}...")
         codes = (
             df.filter(pl.col("parent_codes").str.starts_with(prefix))
             .with_columns(
@@ -253,7 +252,7 @@ def process_codes(input_parquet: str, output_dir: str, prefix_map: dict):
 
         if len(codes) > 0:
             codes.write_parquet(output_dir_path / f"{name}_codes.parquet")
-            print(f"Saved {len(codes)} codes for {name} → {(name + '_codes.parquet')}")
+            #print(f"Saved {len(codes)} codes for {name} → {(name + '_codes.parquet')}")
 
 
 PREFIX_MAP = {

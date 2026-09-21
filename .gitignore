@@ -224,10 +224,22 @@ MIMIC/pre_MEDS
 MIMIC/raw_input
 .venv_mimic
 
-NEUROVASC2/raw_input/*
-NEUROVASC2/MEDS_cohort/*
-NEUROVASC2/pre_MEDS/*.parquet
-NEUROVASC2/metrics/*
+NEUROVASC_V2/raw_input/*
+NEUROVASC_V2/MEDS_cohort/*
+NEUROVASC_V2/pre_MEDS/*.parquet
+NEUROVASC_V2/metrics/*
+
+eICU/raw_input/*
+eICU/MEDS_cohort/*
+eICU/pre_MEDS/*
+eICU/metrics/*
+eICU/.logs
+
+NWICU/raw_input/*
+NWICU/MEDS_cohort/*
+NWICU/pre_MEDS/*
+NWICU/metrics/*
+NWICU/.logs
 
 graph
 MIMIC/mimic.tar.gz
@@ -239,6 +251,4 @@ MEDS_*
 
 exports
 
-*.old*
-
-*/**/*.old*
+exp*

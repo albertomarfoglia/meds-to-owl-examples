@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 import joblib
@@ -14,6 +14,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
+from codecarbon import EmissionsTracker
+import time
+
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
@@ -22,7 +25,6 @@ from sklearn.metrics import (
     roc_auc_score,
     average_precision_score,
 )
-
 
 def build_features(df: pl.DataFrame) -> pl.DataFrame:
 
@@ -374,23 +376,44 @@ def evaluate_multiclass_model(
 
     return metric_df
 
-def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_model = False):
+# --- import (or copy) the exact same split function the RGCN pipeline uses ---
+def k_fold(X, y, folds, random_state=77):
+    skf = StratifiedKFold(folds, shuffle=True, random_state=random_state)
+    train_indices, val_indices, test_indices = [], [], []
+    train_y, val_y, test_y = [], [], []
+    for non_test_idx, test_idx in skf.split(X, y):
+        test_indices.append(X[test_idx])
+        train_idx, val_idx, _, _ = train_test_split(
+            non_test_idx, y[non_test_idx], test_size=1 / 9, random_state=random_state
+        )
+        train_indices.append(X[train_idx])
+        val_indices.append(X[val_idx])
+        train_y.append(y[train_idx])
+        val_y.append(y[val_idx])
+        test_y.append(y[test_idx])
+    return train_indices, val_indices, test_indices, train_y, val_y, test_y
+
+
+def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_model=False):
     ROOT = meds_root
 
     df = build_features(pl.read_parquet(f"{ROOT}/data/**/0.parquet"))
-    X = df.sort("subject_id").to_pandas().select_dtypes(exclude=["datetime64[ns]"])
-    X = pd.get_dummies(X).drop(columns=["subject_id"])
-    y = np.array(
-        joblib.load(outcomes_path)
-    )
+    X_df = df.sort("subject_id").to_pandas().select_dtypes(exclude=["datetime64[ns]"])
+    X_df = pd.get_dummies(X_df).drop(columns=["subject_id"])
+    X = X_df.to_numpy()
+    y = np.array(joblib.load(outcomes_path))
 
     NUM_PATIENTS = len(y)
     CLASSES = classes
 
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    # --- CHANGED: same 10-fold, same random_state, same train/val/test split
+    # the RGCN pipeline uses, instead of an independent 5-fold split. ---
+    train_idx_list, val_idx_list, test_idx_list, train_y_list, val_y_list, test_y_list = k_fold(
+        np.arange(len(y)), y, folds=10, random_state=77
+    )
 
-    models = {
-        "xgboost": XGBClassifier(
+    models_config = {
+        "xgboost": lambda: XGBClassifier(
             n_estimators=400,
             max_depth=6,
             learning_rate=0.05,
@@ -398,117 +421,89 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_mode
             colsample_bytree=0.8,
             random_state=42,
             n_jobs=-1,
-            objective="multi:softprob",
-            num_class=len(classes),
-            eval_metric="mlogloss",
-            # feature_names=feature_names,
+            objective="multi:softprob" if len(classes) > 2 else "binary:logistic",
+            num_class=len(classes) if len(classes) > 2 else None,
+            eval_metric="mlogloss" if len(classes) > 2 else "logloss",
+            early_stopping_rounds=20,  # CHANGED: mirrors RGCN's val-based early stopping
         ),
-        "rf": RandomForestClassifier(
-            n_estimators=500,
-            max_depth=10,
-            random_state=42,
-            n_jobs=-1,
-        ),
-        "lr": Pipeline(
-            [
-                ("imputer", SimpleImputer(strategy="median")),
-                ("scaler", StandardScaler()),
-                (
-                    "classifier",
-                    LogisticRegression(
-                        # multi_class="multinomial",
-                        solver="lbfgs",
-                        max_iter=5000,
-                        class_weight="balanced",
-                        random_state=42,
-                        n_jobs=-1,
-                    ),
-                ),
-            ]
-        ),
-        # "mlp": Pipeline(
-        #     [
-        #         ("imputer", SimpleImputer(strategy="median")),
-        #         ("scaler", StandardScaler()),
-        #         (
-        #             "classifier",
-        #             MLPClassifier(
-        #                 hidden_layer_sizes=(256, 128),
-        #                 activation="relu",
-        #                 solver="adam",
-        #                 alpha=1e-4,
-        #                 batch_size=32,
-        #                 learning_rate_init=1e-3,
-        #                 max_iter=500,
-        #                 early_stopping=True,
-        #                 validation_fraction=0.1,
-        #                 n_iter_no_change=20,
-        #                 random_state=42,
-        #                 verbose=False,
-        #             ),
-        #         ),
-        #     ]
+        # "rf": lambda: RandomForestClassifier(
+        #     n_estimators=500, max_depth=10, random_state=42, n_jobs=-1,
         # ),
+        # "lr": lambda: Pipeline([
+        #     ("imputer", SimpleImputer(strategy="median")),
+        #     ("scaler", StandardScaler()),
+        #     ("classifier", LogisticRegression(
+        #         solver="lbfgs", max_iter=5000, class_weight="balanced",
+        #         random_state=42, n_jobs=-1,
+        #     )),
+        # ]),
     }
 
-    best_score = -np.inf
-    best_fold = None
-    best_model = None
+    best_score = {name: -np.inf for name in models_config}
+    best_fold = {name: None for name in models_config}
+    best_model = {name: None for name in models_config}
 
-    for model_name, model in models.items():
+    for model_name, model_factory in models_config.items():
         RESULTS = f"{result_dir}/{model_name}"
-
         os.makedirs(RESULTS, exist_ok=True)
         os.makedirs(f"{RESULTS}/cm", exist_ok=True)
         os.makedirs(f"{RESULTS}/models", exist_ok=True)
 
         all_metrics = []
 
-        GPU_IDS = [0, 1, 2, 3]
-
-        for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_IDS[fold % 4])
-            x_train = X.iloc[train_idx]
-            x_val = X.iloc[val_idx]
-
-            y_train = y[train_idx]
-            y_val = y[val_idx]
-
-            model.fit(x_train, y_train)
-
-            metric = evaluate_multiclass_model(
-                model,
-                x_val,
-                y_val,
-                val_idx,
-                fold,
-                result_dir=RESULTS,
-                data_model=model_name,
-                classes=CLASSES,
-                num_patients=NUM_PATIENTS,
-                time_opt="TS",
+        for fold in range(10):
+            tracker = EmissionsTracker(
+                project_name=f"fold_{fold}",
+                output_dir=result_dir,
+                measure_power_secs=1,
+                log_level=1
             )
 
+            tracker.start()
+            start = time.perf_counter()
+
+            train_idx = train_idx_list[fold]
+            val_idx = val_idx_list[fold]
+            test_idx = test_idx_list[fold]  # CHANGED: real held-out test fold, distinct from val
+
+            x_train, y_train = X[train_idx], y[train_idx]
+            x_val, y_val = X[val_idx], y[val_idx]
+            x_test, y_test = X[test_idx], y[test_idx]
+
+            model = model_factory()
+
+            # --- CHANGED: XGBoost gets the same validation-based stopping signal
+            # the RGCN receives; RF/LR have no native equivalent (see note below). ---
+            if model_name == "xgboost":
+                model.fit(x_train, y_train, eval_set=[(x_val, y_val)], verbose=False)
+            else:
+                model.fit(x_train, y_train)
+
+            # CHANGED: evaluate on the *test* fold, not the validation fold
+            metric = evaluate_multiclass_model(
+                model, x_test, y_test, test_idx, fold,
+                result_dir=RESULTS, data_model=model_name,
+                classes=CLASSES, num_patients=NUM_PATIENTS, time_opt="TS",
+            )
             all_metrics.append(metric)
 
             current_score = metric.loc["MACRO", "AUC"]
+            if current_score > best_score[model_name]: # type: ignore
+                best_score[model_name] = current_score  # type: ignore
+                best_fold[model_name] = fold  # type: ignore
+                best_model[model_name] = model  # type: ignore
 
-            if current_score > best_score: # type: ignore
-                best_score = current_score
-                best_fold = fold
-                best_model = model
+            runtime = time.perf_counter() - start
+            emissions = tracker.stop()
+
+            print(f"Runtime: {runtime}", f"Emissions: {emissions}")
 
         if save_model:
             model_path = (
                 f"{RESULTS}/models/"
-                f"{model_name}_best_fold{best_fold}_auc_{best_score:.4f}.joblib"
+                f"{model_name}_best_fold{best_fold[model_name]}_auc_{best_score[model_name]:.4f}.joblib"
             )
-
-            joblib.dump(best_model, model_path)
-
-            print(
-                f"Saved best {model_name} model (fold={best_fold}, macro_auc={best_score:.4f})"
-            )
+            joblib.dump(best_model[model_name], model_path)
 
         panel = pd.concat(all_metrics)
         metrics_mean = panel.groupby(level=0).mean()
@@ -525,4 +520,235 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_mode
         metrics_mean.to_csv(f"{RESULTS}/metrics_TS_{NUM_PATIENTS}.csv", mode="a")
         metrics_std.to_csv(f"{RESULTS}/metrics_TS_{NUM_PATIENTS}.csv", mode="a")
 
-    return X, y
+        print(mean_std_metrics(metrics_mean, metrics_std, CLASSES))
+
+    return X_df, y
+
+
+# def extract_float(text):
+#     """Extract first float from messy string"""
+#     if isinstance(text, (float, int)):
+#         return float(text)
+
+#     match = re.search(r"[-+]?\d*\.\d+|\d+", str(text))
+#     return float(match.group()) if match else np.nan
+
+
+# def parse_mean_block(file_path):
+#     df = pd.read_csv(file_path)
+
+#     # keep only MEAN rows
+#     df = df[df["MEAN"].isin(["FALSE", "TRUE", "MACRO", "WEIGHTED"])].copy()
+
+#     df = df.set_index("MEAN")
+
+#     clean = {}
+
+#     for metric in ["F1SCORE", "ACCURACY", "AUC", "AP"]:
+#         clean[metric] = {
+#             row: extract_float(df.loc[row, metric])
+#             for row in df.index
+#         }
+
+#     return clean
+
+# def format_row(summary):
+#     order = [
+#         "FALSE_F1",
+#         "TRUE_F1",
+#         "MACRO_F1",
+#         "WEIGHTED_F1",
+#         "ACCURACY",
+#         "AUC",
+#         "AP"
+#     ]
+
+#     values = []
+#     for k in order:
+#         mean, std = summary[k]
+#         values.append(f"{mean:.2f} ± {std:.2f}")
+
+#     print("\t".join(order))
+#     print("\t".join(values))
+
+
+# def aggregate_task(exp, results_dir, model_type):
+#     per_subsample = []
+
+#     for s in range(0, exp["num_of_samples"]):
+#         file_path = f"{results_dir}/{exp['task']}/meds/{str(s)}/metrics_{exp['sample_size']}/{model_type}/metrics_TS_{exp['sample_size']}.csv"
+
+#         mean_block = parse_mean_block(file_path)
+
+#         per_subsample.append({
+#             "FALSE_F1": mean_block["F1SCORE"]["FALSE"],
+#             "TRUE_F1": mean_block["F1SCORE"]["TRUE"],
+#             "MACRO_F1": mean_block["F1SCORE"]["MACRO"],
+#             "WEIGHTED_F1": mean_block["F1SCORE"]["WEIGHTED"],
+#             "ACCURACY": mean_block["ACCURACY"]["MACRO"],
+#             "AUC": mean_block["AUC"]["MACRO"],
+#             "AP": mean_block["AP"]["MACRO"],
+#         })
+
+#     df = pd.DataFrame(per_subsample)
+
+#     summary = {}
+#     for col in df.columns:
+#         values = df[col].values
+#         summary[col] = (np.mean(values), np.std(values, ddof=1)) # type: ignore
+
+#     return summary
+
+def extract_float(text):
+    """Extract first float from messy string."""
+    if isinstance(text, (float, int)):
+        return float(text)
+
+    match = re.search(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", str(text))
+    return float(match.group()) if match else np.nan
+
+
+def parse_mean_block(file_path):
+    df = pd.read_csv(file_path)
+
+    # Keep only MEAN rows
+    df = df[df["MEAN"].isin(["FALSE", "TRUE", "MACRO", "WEIGHTED"])].copy()
+    df = df.set_index("MEAN")
+
+    clean = {}
+
+    for metric in ["F1SCORE", "ACCURACY", "AUC", "AP"]:
+        clean[metric] = {
+            row: extract_float(df.loc[row, metric])
+            for row in df.index
+        }
+
+    return clean
+
+
+def parse_emissions(emissions_path):
+    """
+    Read emissions.csv for one subsample.
+
+    The file contains 10 rows (fold_0 ... fold_9).
+    We compute the mean duration and mean CO2 emissions
+    across the 10 folds.
+    """
+    df = pd.read_csv(emissions_path)
+
+    required_columns = {"duration", "emissions"}
+    missing = required_columns - set(df.columns)
+
+    if missing:
+        raise ValueError(
+            f"Missing columns {missing} in {emissions_path}"
+        )
+
+    # Convert to numeric in case the CSV contains strings
+    duration = pd.to_numeric(df["duration"], errors="coerce")
+    emissions = pd.to_numeric(df["emissions"], errors="coerce")
+
+    return {
+        "DURATION": duration.mean(),
+        "CO2": emissions.mean(),
+    }
+
+
+def format_row(summary):
+    order = [
+        "FALSE_F1",
+        "TRUE_F1",
+        "MACRO_F1",
+        "WEIGHTED_F1",
+        "ACCURACY",
+        "AUC",
+        "AP",
+        "DURATION",
+        "CO2",
+    ]
+
+    values = []
+
+    for k in order:
+        mean, std = summary[k]
+
+        # Metrics
+        if k not in ["DURATION", "CO2"]:
+            values.append(f"{mean:.2f} ± {std:.2f}")
+
+        # Duration in seconds
+        elif k == "DURATION":
+            values.append(f"{mean:.2f} ± {std:.2f} s")
+
+        # CO2 emissions in kg
+        elif k == "CO2":
+            values.append(f"{mean:.6f} ± {std:.6f} kg")
+
+    print("\t".join(order))
+    print("\t".join(values))
+
+
+def aggregate_task(exp, results_dir, model_type):
+    per_subsample = []
+
+    for s in range(0, exp["num_of_samples"]):
+
+        base_path = (
+            results_dir
+            / exp["task"]
+            / "meds"
+            / str(s)
+            / f"metrics_{exp['sample_size']}"
+        )
+
+        metrics_path = (
+            base_path
+            / model_type
+            / f"metrics_TS_{exp['sample_size']}.csv"
+        )
+
+        emissions_path = base_path / "emissions.csv"
+
+        # -------------------------
+        # Classification metrics
+        # -------------------------
+        mean_block = parse_mean_block(metrics_path)
+
+        # -------------------------
+        # Duration + CO2
+        # -------------------------
+        emissions_stats = parse_emissions(emissions_path)
+
+        per_subsample.append({
+            "FALSE_F1": mean_block["F1SCORE"]["FALSE"],
+            "TRUE_F1": mean_block["F1SCORE"]["TRUE"],
+            "MACRO_F1": mean_block["F1SCORE"]["MACRO"],
+            "WEIGHTED_F1": mean_block["F1SCORE"]["WEIGHTED"],
+            "ACCURACY": mean_block["ACCURACY"]["MACRO"],
+            "AUC": mean_block["AUC"]["MACRO"],
+            "AP": mean_block["AP"]["MACRO"],
+
+            # Mean over the 10 folds of this subsample
+            "DURATION": emissions_stats["DURATION"],
+            "CO2": emissions_stats["CO2"],
+        })
+
+    df = pd.DataFrame(per_subsample)
+
+    # -------------------------
+    # Aggregate across subsamples
+    # -------------------------
+    summary = {}
+
+    for col in df.columns:
+        values = df[col].values
+
+        # Mean across subsamples
+        mean = np.mean(values) # type: ignore
+
+        # Sample std across subsamples
+        std = np.std(values, ddof=1) # type: ignore
+
+        summary[col] = (mean, std)
+
+    return summary

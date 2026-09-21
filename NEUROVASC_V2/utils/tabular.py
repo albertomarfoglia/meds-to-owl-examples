@@ -387,7 +387,7 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_mode
     NUM_PATIENTS = len(y)
     CLASSES = classes
 
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 
     models = {
         "xgboost": XGBClassifier(

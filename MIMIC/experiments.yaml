@@ -1,9 +1,9 @@
 experiments:
   mortality:
     - task: first_24_in_hospital_mortality
-      sample_size: 20000
+      sample_size: 1000
       num_of_samples: 5
-      fixed_true: True
+      fixed_true: true
       window: 24h
       agg: 1d
       metadata:
@@ -15,9 +15,9 @@ experiments:
         events: 5070128
 
     - task: first_48_in_hospital_mortality
-      sample_size: 20000
+      sample_size: 1000
       num_of_samples: 5
-      fixed_true: True
+      fixed_true: false
       window: 48h
       agg: 1d
       metadata:
@@ -29,7 +29,7 @@ experiments:
         evetns: 5667206
 
     - task: first_24_in_icu_mortality
-      sample_size: 8768
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: true
       window: 24h
@@ -41,7 +41,7 @@ experiments:
         events: 6131002
 
     - task: first_48_in_icu_mortality
-      sample_size: 8666
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: true
       window: 48h
@@ -55,8 +55,8 @@ experiments:
         events: 6861079
 
     - task: post_hospital_discharge_mortality_30d
-      sample_size: 5000
-      num_of_samples: 2
+      sample_size: 1000
+      num_of_samples: 5
       fixed_true: false
       window: full
       agg: 1w
@@ -69,7 +69,7 @@ experiments:
         events: 5320207
 
     - task: post_hospital_discharge_mortality_1y
-      sample_size: 10000
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: false
       window: full
@@ -84,7 +84,7 @@ experiments:
 
   los:
     - task: first_48_in_hospital_los
-      sample_size: 20000
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: false
       window: 48h
@@ -98,7 +98,7 @@ experiments:
         events: 4717890
 
     - task: first_48_in_icu_los
-      sample_size: 7408
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: false
       window: 48h
@@ -113,7 +113,7 @@ experiments:
 
   readmission:
     - task: readmission_30d
-      sample_size: 10000
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: false
       window: full
@@ -128,7 +128,7 @@ experiments:
 
   phenotyping:
     - task: ckd_in_diabetics_within_5y_of_kidney_panel
-      sample_size: 1876
+      sample_size: 1000
       num_of_samples: 5
       fixed_true: true
       window: full
