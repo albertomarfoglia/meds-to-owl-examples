@@ -4,7 +4,7 @@ meds==0.4.1
 meds2rdf @ git+https://github.com/TeamHeKA/meds2rdf.git@feature/performance-scalability
 MEDS_extract==0.5.0
 MEDS_transforms==0.6.1
-numpy==1.26.4
+numpy==2.0.0
 omegaconf==2.3.0
 pandas==2.2.2
 polars==1.30.0
@@ -12,7 +12,7 @@ polars-runtime-32==1.36.1
 rdflib==7.5.0
 scikit-learn==1.5.1
 scipy==1.16.3
-es-aces==0.7.1
+es-aces==0.7.3
 requests
 xgboost==3.2.0
 matplotlib==3.10.9

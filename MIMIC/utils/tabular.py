@@ -426,17 +426,17 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_mode
             eval_metric="mlogloss" if len(classes) > 2 else "logloss",
             early_stopping_rounds=20,  # CHANGED: mirrors RGCN's val-based early stopping
         ),
-        # "rf": lambda: RandomForestClassifier(
-        #     n_estimators=500, max_depth=10, random_state=42, n_jobs=-1,
-        # ),
-        # "lr": lambda: Pipeline([
-        #     ("imputer", SimpleImputer(strategy="median")),
-        #     ("scaler", StandardScaler()),
-        #     ("classifier", LogisticRegression(
-        #         solver="lbfgs", max_iter=5000, class_weight="balanced",
-        #         random_state=42, n_jobs=-1,
-        #     )),
-        # ]),
+        "rf": lambda: RandomForestClassifier(
+            n_estimators=500, max_depth=10, random_state=42, n_jobs=-1,
+        ),
+        "lr": lambda: Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+            ("classifier", LogisticRegression(
+                solver="lbfgs", max_iter=5000, class_weight="balanced",
+                random_state=42, n_jobs=-1,
+            )),
+        ]),
     }
 
     best_score = {name: -np.inf for name in models_config}
@@ -456,7 +456,7 @@ def run_tabulars_models(meds_root, outcomes_path, classes, result_dir, save_mode
                 project_name=f"fold_{fold}",
                 output_dir=result_dir,
                 measure_power_secs=1,
-                log_level=1
+                log_level="critical",
             )
 
             tracker.start()
